@@ -1254,11 +1254,18 @@ footer{background:#0F110A;border-top:1px solid var(--line)}
     var s = document.getElementById("svc");
     var sv = s.options[s.selectedIndex] ? s.options[s.selectedIndex].text : "";
     var n = document.getElementById("n").value;
-    var lines = ["Hi AnaCoo Tailor, I'd like to book an appointment."];
-    if(d) lines.push("Date: " + d);
-    if(t) lines.push("Time: " + t);
-    if(sv && s.value) lines.push("Service: " + sv);
-    if(n) lines.push("Notes: " + n);
+    var div = "━━━━━━━━━━━━━";
+    var lines = [];
+    lines.push("🪡 *AnaCoo Tailor — Appointment*");
+    lines.push(div);
+    lines.push("👋 Hi! I'd like to book an appointment.");
+    lines.push("");
+    if(d) lines.push("📅 *Date:* " + d);
+    if(t) lines.push("⏰ *Time:* " + t);
+    if(sv && s.value) lines.push("✂️ *Service:* " + sv);
+    if(n) lines.push("📝 *Notes:* " + n);
+    lines.push(div);
+    lines.push("🙏 Thank you!");
     btn.href = "https://wa.me/" + WA + "?text=" + encodeURIComponent(lines.join("\n"));
   }
   ["d","t","svc","n"].forEach(function(id){
