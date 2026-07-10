@@ -1104,9 +1104,9 @@ html{scroll-behavior:smooth}
 
 </style>
 
-<!-- scrolling performance: avoid laying out and painting off-screen sections -->
+<!-- scrolling performance hints -->
 <style>
-section,.strip,footer{content-visibility:auto;contain-intrinsic-size:1px 720px}
+section,.strip,footer{contain-intrinsic-size:1px 720px}
 header,.float-nav{will-change:transform}
 @media(max-width:960px){
   section,.strip,footer{contain-intrinsic-size:1px 560px}
@@ -1515,7 +1515,10 @@ header,.float-nav{will-change:transform}
   var scrollTargets = Array.prototype.slice.call(document.querySelectorAll(
     '#home, .strip, #services, #process, #pricing, #payment, #faqs, #appointment, #contact, footer'
   ));
-  scrollTargets.forEach(function(el){ el.classList.add('section-scroll-target'); });
+  scrollTargets.forEach(function(el){
+    el.classList.add('section-scroll-target');
+    el.classList.add('page-fit');
+  });
 
   var guidedScroll = {
     active: false,
@@ -1605,6 +1608,9 @@ header,.float-nav{will-change:transform}
     }
   });
 
+  if('onscrollend' in window){
+    window.addEventListener('scrollend', releaseGuidedScroll);
+  }
   window.addEventListener('resize', releaseGuidedScroll);
 
   // Show all content immediately with no reveal/counter animations.
@@ -1652,7 +1658,6 @@ header,.float-nav{will-change:transform}
   // floating section navigation active state
   var floatLinks = Array.prototype.slice.call(document.querySelectorAll(".float-nav a"));
   var floatTargets = floatLinks.map(function(a){ return document.querySelector(a.getAttribute("href")); }).filter(Boolean);
-  floatTargets.forEach(function(sec){ sec.classList.add("page-fit"); });
   function setActiveFloatNav(){
     var current = floatTargets[0];
     var marker = window.scrollY + window.innerHeight * 0.38;
