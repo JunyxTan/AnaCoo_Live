@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<script>document.documentElement.className+=" janim";</script>
 <title>AnaCoo Tailor — Modern Bespoke Tailoring</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -905,15 +904,6 @@ footer{background:#0F110A;border-top:1px solid var(--line)}
 .form input:focus,.form select:focus,.form textarea:focus{border-color:var(--oxblood);box-shadow:0 0 16px var(--glow-soft)}
 .foot .soc a:hover{background:var(--oxblood);border-color:var(--oxblood);box-shadow:0 0 16px var(--glow)}
 </style>
-<!-- bidirectional scroll-reveal: slide direction follows scroll up/down, re-triggers on re-entry -->
-<style>
-.janim .rv{transform:translateY(var(--rv-y,28px))}
-.janim .stagger > *{transform:translateY(var(--rv-y,26px))}
-@media(prefers-reduced-motion:reduce){
-  .janim .rv,.janim .stagger>*{transform:none!important}
-}
-</style>
-
 <!-- floating section navigation -->
 <style>
 .float-nav{position:fixed;right:clamp(28px,3.8vw,72px);top:50%;transform:translateY(-50%);z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:12px;pointer-events:none}
@@ -987,6 +977,14 @@ footer{padding:42px 0 30px}
   footer{padding-top:32px}
 }
 </style>
+<!-- sitewide motion disabled -->
+<style>
+html{scroll-behavior:auto!important}
+*,*::before,*::after{animation:none!important;transition:none!important}
+.rv,.stagger>*,.hero-anim>*,.collage figure,.collage img,.collage .tag{opacity:1!important;clip-path:none!important}
+.seam,.hero h1 em::after{transform:scaleX(1)!important}
+</style>
+
 </head>
 <body>
 
@@ -1368,68 +1366,13 @@ footer{padding:42px 0 30px}
   // Keep landing position under visitor control. Previously, the first
   // wheel/touch gesture auto-scrolled to the bottom of the page.
 
-  // track scroll direction -> slide reveals come from below (down) or above (up)
-  var lastY = window.scrollY;
-  function setDir(){
-    var y = window.scrollY;
-    if(Math.abs(y - lastY) > 1){
-      document.documentElement.style.setProperty("--rv-y", y < lastY ? "-28px" : "28px");
-      lastY = y;
-    }
-  }
-  window.addEventListener("scroll", setDir, {passive:true});
-
-  // reveal on scroll (+ stagger containers) — re-triggers in BOTH directions
-  var io = new IntersectionObserver(function(entries){
-    entries.forEach(function(en){
-      en.target.classList.toggle("in", en.isIntersecting);
-    });
-  }, {threshold:0.12, rootMargin:"0px 0px -8% 0px"});
-  document.querySelectorAll(".rv, .stagger").forEach(function(el){ io.observe(el); });
-
-  // hero + collage animate once (top of page)
-  var ioOnce = new IntersectionObserver(function(entries){
-    entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add("in"); ioOnce.unobserve(en.target);} });
-  }, {threshold:0.12});
-  document.querySelectorAll(".hero-anim, .collage").forEach(function(el){ ioOnce.observe(el); });
-
-  // safety net: if the observer never fires (rare/throttled contexts), reveal everything
-  setTimeout(function(){
-    document.querySelectorAll(".rv, .stagger, .hero-anim, .collage").forEach(function(el){ el.classList.add("in"); });
-    if(!counted){ counted = true; document.querySelectorAll(".hero-meta b[data-count]").forEach(animateCount); }
-  }, 1800);
-
-  // animated counters in hero
-  function animateCount(el){
-    var target = parseFloat(el.getAttribute("data-count"));
+  // Show all content immediately with no reveal/counter animations.
+  document.querySelectorAll(".rv, .stagger, .hero-anim, .collage").forEach(function(el){ el.classList.add("in"); });
+  document.querySelectorAll(".hero-meta b[data-count]").forEach(function(el){
+    var target = el.getAttribute("data-count");
     var prefix = el.getAttribute("data-prefix") || "";
-    if(isNaN(target)){ return; }
-    var dur = 1100, start = null;
-    function frame(ts){
-      if(!start) start = ts;
-      var p = Math.min((ts - start)/dur, 1);
-      var eased = 1 - Math.pow(1 - p, 3);
-      el.textContent = prefix + Math.round(eased * target);
-      if(p < 1){ requestAnimationFrame(frame); }
-      else { el.textContent = prefix + target; }
-    }
-    requestAnimationFrame(frame);
-  }
-  var counted = false;
-  var heroMeta = document.querySelector(".hero-meta");
-  if(heroMeta){
-    var cio = new IntersectionObserver(function(entries){
-      entries.forEach(function(en){
-        if(en.isIntersecting && !counted){
-          counted = true;
-          document.querySelectorAll(".hero-meta b[data-count]").forEach(animateCount);
-          cio.disconnect();
-        }
-      });
-    }, {threshold:0.4});
-    // delay so it plays after the hero entrance choreography
-    setTimeout(function(){ cio.observe(heroMeta); }, 600);
-  }
+    if(target !== null){ el.textContent = prefix + target; }
+  });
 
   // floating section navigation active state
   var floatLinks = Array.prototype.slice.call(document.querySelectorAll(".float-nav a"));
