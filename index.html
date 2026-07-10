@@ -1457,15 +1457,103 @@ header,.float-nav{will-change:transform}
   var dEl = document.getElementById("d");
   dEl.min = new Date().toISOString().split("T")[0];
 
-  // Keep native browser scrolling for smooth, responsive wheel and touch input.
-  // The previous guided section scroller intercepted wheel/touch gestures and
-  // triggered long smooth-scroll animations, which made normal scrolling feel
-  // delayed on trackpads and mobile devices. Section targets still keep the
-  // correct sticky-header offset for ordinary anchor navigation.
+  // Guided one-page-at-a-time scrolling. Wheel, trackpad and touch gestures are
+  // collapsed into a single page move while the current page transition is in
+  // progress, so fast scroll input cannot skip multiple sections at once.
   var scrollTargets = Array.prototype.slice.call(document.querySelectorAll(
     '#home, .strip, #services, #process, #pricing, #payment, #faqs, #appointment, #contact, footer'
   ));
   scrollTargets.forEach(function(el){ el.classList.add('section-scroll-target'); });
+
+  var guidedScroll = {
+    active: false,
+    touchY: null,
+    unlockTimer: 0
+  };
+  var reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function getHeaderOffset(){
+    var styles = window.getComputedStyle(document.documentElement);
+    var navH = parseFloat(styles.getPropertyValue('--nav-h')) || 0;
+    return Math.max(navH + 10, 0);
+  }
+
+  function getTargetTop(target){
+    var maxY = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0);
+    return Math.min(Math.max(target.getBoundingClientRect().top + window.pageYOffset - getHeaderOffset(), 0), maxY);
+  }
+
+  function currentPageIndex(){
+    var y = window.pageYOffset;
+    var best = 0;
+    var bestDistance = Infinity;
+    scrollTargets.forEach(function(target, index){
+      var distance = Math.abs(getTargetTop(target) - y);
+      if(distance < bestDistance){
+        best = index;
+        bestDistance = distance;
+      }
+    });
+    return best;
+  }
+
+  function releaseGuidedScroll(){
+    guidedScroll.active = false;
+    window.clearTimeout(guidedScroll.unlockTimer);
+  }
+
+  function scrollOnePage(direction){
+    if(!direction || guidedScroll.active || scrollTargets.length < 2){ return; }
+    var current = currentPageIndex();
+    var next = Math.min(Math.max(current + direction, 0), scrollTargets.length - 1);
+    if(next === current){ return; }
+
+    guidedScroll.active = true;
+    window.scrollTo({
+      top: getTargetTop(scrollTargets[next]),
+      behavior: reduceMotionQuery.matches ? 'auto' : 'smooth'
+    });
+    window.clearTimeout(guidedScroll.unlockTimer);
+    guidedScroll.unlockTimer = window.setTimeout(releaseGuidedScroll, reduceMotionQuery.matches ? 250 : 850);
+  }
+
+  function shouldUseNativeScroll(event){
+    return event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey;
+  }
+
+  window.addEventListener('wheel', function(event){
+    if(shouldUseNativeScroll(event)){ return; }
+    var delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+    if(Math.abs(delta) < 8){ return; }
+    event.preventDefault();
+    scrollOnePage(delta > 0 ? 1 : -1);
+  }, {passive:false});
+
+  window.addEventListener('touchstart', function(event){
+    guidedScroll.touchY = event.touches && event.touches.length ? event.touches[0].clientY : null;
+  }, {passive:true});
+
+  window.addEventListener('touchmove', function(event){
+    if(guidedScroll.touchY === null || !(event.touches && event.touches.length)){ return; }
+    var delta = guidedScroll.touchY - event.touches[0].clientY;
+    if(Math.abs(delta) < 36){ return; }
+    event.preventDefault();
+    guidedScroll.touchY = null;
+    scrollOnePage(delta > 0 ? 1 : -1);
+  }, {passive:false});
+
+  window.addEventListener('keydown', function(event){
+    if(event.defaultPrevented || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(event.target.tagName)){ return; }
+    if(event.key === 'PageDown' || event.key === 'ArrowDown' || event.key === ' '){
+      event.preventDefault();
+      scrollOnePage(1);
+    } else if(event.key === 'PageUp' || event.key === 'ArrowUp'){
+      event.preventDefault();
+      scrollOnePage(-1);
+    }
+  });
+
+  window.addEventListener('resize', releaseGuidedScroll);
 
   // Show all content immediately with no reveal/counter animations.
   document.querySelectorAll(".rv, .stagger, .hero-anim, .collage").forEach(function(el){ el.classList.add("in"); });
