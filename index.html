@@ -977,12 +977,14 @@ footer{padding:42px 0 30px}
   footer{padding-top:32px}
 }
 </style>
-<!-- sitewide motion disabled -->
+<!-- Teladan-style guided section scrolling -->
 <style>
-html{scroll-behavior:auto!important}
-*,*::before,*::after{animation:none!important;transition:none!important}
-.rv,.stagger>*,.hero-anim>*,.collage figure,.collage img,.collage .tag{opacity:1!important;clip-path:none!important}
-.seam,.hero h1 em::after{transform:scaleX(1)!important}
+html{scroll-behavior:smooth}
+body.section-scroll-lock{overscroll-behavior-y:contain}
+.section-scroll-target{scroll-margin-top:calc(var(--nav-h, 64px) + 10px)}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+}
 </style>
 
 </head>
@@ -1363,8 +1365,73 @@ html{scroll-behavior:auto!important}
   var dEl = document.getElementById("d");
   dEl.min = new Date().toISOString().split("T")[0];
 
-  // Keep landing position under visitor control. Previously, the first
-  // wheel/touch gesture auto-scrolled to the bottom of the page.
+  // Teladan-style guided page scrolling: desktop wheel/trackpad gestures
+  // advance to the next major content band instead of drifting freely.
+  var scrollTargets = Array.prototype.slice.call(document.querySelectorAll(
+    '#home, .strip, #services, #process, #pricing, #payment, #faqs, #appointment, #contact, footer'
+  ));
+  scrollTargets.forEach(function(el){ el.classList.add('section-scroll-target'); });
+
+  var guidedScrollEnabled = window.matchMedia('(min-width: 961px) and (prefers-reduced-motion: no-preference)');
+  var scrollingSection = false;
+  var touchStartY = null;
+  var lastWheelAt = 0;
+
+  function headerOffset(){
+    var h = document.querySelector('header');
+    return h ? h.offsetHeight : 0;
+  }
+
+  function targetTop(el){
+    var extra = el.tagName && el.tagName.toLowerCase() === 'footer' ? 0 : 10;
+    return Math.max(0, el.getBoundingClientRect().top + window.pageYOffset - headerOffset() - extra);
+  }
+
+  function currentTargetIndex(){
+    var marker = window.pageYOffset + headerOffset() + window.innerHeight * 0.18;
+    var idx = 0;
+    scrollTargets.forEach(function(el, i){
+      if(targetTop(el) <= marker){ idx = i; }
+    });
+    return idx;
+  }
+
+  function guidedScroll(dir){
+    if(!guidedScrollEnabled.matches || scrollingSection || scrollTargets.length < 2){ return false; }
+    var active = currentTargetIndex();
+    var next = Math.max(0, Math.min(scrollTargets.length - 1, active + (dir > 0 ? 1 : -1)));
+    if(next === active){ return false; }
+    scrollingSection = true;
+    document.body.classList.add('section-scroll-lock');
+    window.scrollTo({top: targetTop(scrollTargets[next]), behavior: 'smooth'});
+    window.setTimeout(function(){
+      scrollingSection = false;
+      document.body.classList.remove('section-scroll-lock');
+      setActiveFloatNav();
+    }, 850);
+    return true;
+  }
+
+  window.addEventListener('wheel', function(e){
+    if(!guidedScrollEnabled.matches || Math.abs(e.deltaY) < Math.abs(e.deltaX) || Math.abs(e.deltaY) < 18){ return; }
+    var now = Date.now();
+    if(now - lastWheelAt < 260){ e.preventDefault(); return; }
+    if(guidedScroll(e.deltaY)){
+      lastWheelAt = now;
+      e.preventDefault();
+    }
+  }, {passive:false});
+
+  window.addEventListener('touchstart', function(e){
+    touchStartY = e.touches && e.touches.length ? e.touches[0].clientY : null;
+  }, {passive:true});
+
+  window.addEventListener('touchend', function(e){
+    if(touchStartY === null || !e.changedTouches || !e.changedTouches.length){ return; }
+    var dy = touchStartY - e.changedTouches[0].clientY;
+    touchStartY = null;
+    if(Math.abs(dy) > 70){ guidedScroll(dy); }
+  }, {passive:true});
 
   // Show all content immediately with no reveal/counter animations.
   document.querySelectorAll(".rv, .stagger, .hero-anim, .collage").forEach(function(el){ el.classList.add("in"); });
