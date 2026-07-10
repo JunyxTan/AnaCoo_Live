@@ -1522,7 +1522,7 @@ header,.float-nav{will-change:transform}
   // collapsed into a single page move while the current page transition is in
   // progress, so fast scroll input cannot skip multiple sections at once.
   var scrollTargets = Array.prototype.slice.call(document.querySelectorAll(
-    '#home, .strip, #services, #process, #pricing, #payment, #faqs, #appointment, #contact, footer'
+    '#home, #services, #process, #pricing, #payment, #faqs, #appointment, #contact, footer'
   ));
   scrollTargets.forEach(function(el){
     el.classList.add('section-scroll-target');
