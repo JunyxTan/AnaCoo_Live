@@ -913,6 +913,22 @@ footer{background:#0F110A;border-top:1px solid var(--line)}
   .janim .rv,.janim .stagger>*{transform:none!important}
 }
 </style>
+
+<!-- floating section navigation -->
+<style>
+.float-nav{position:fixed;right:clamp(28px,3.8vw,72px);top:50%;transform:translateY(-50%);z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:12px;pointer-events:none}
+.float-nav a{pointer-events:auto;position:relative;display:flex;align-items:center;justify-content:flex-end;min-height:20px;padding-left:58px;font-family:var(--sans);font-size:12px;font-weight:500;line-height:1;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);opacity:.84;transition:color .25s ease,opacity .25s ease,transform .25s ease}
+.float-nav a::before{content:"";position:absolute;left:0;top:50%;width:0;height:1px;background:var(--gold, var(--oxblood));opacity:.9;transform:translateY(-50%);transition:width .25s ease,box-shadow .25s ease}
+.float-nav a:hover,.float-nav a.active{color:var(--gold-deep, var(--oxblood));opacity:1;transform:translateX(-2px)}
+.float-nav a:hover::before,.float-nav a.active::before{width:42px}
+.float-nav a:focus-visible{outline:2px solid var(--gold, var(--oxblood));outline-offset:5px}
+@media(prefers-color-scheme:dark){
+  .float-nav a:hover,.float-nav a.active{color:var(--oxblood)}
+  .float-nav a:hover::before,.float-nav a.active::before{box-shadow:0 0 10px var(--glow-soft)}
+}
+@media(max-width:1180px){.float-nav{right:20px}.float-nav a{font-size:11px;padding-left:44px}.float-nav a:hover::before,.float-nav a.active::before{width:32px}}
+@media(max-width:960px){.float-nav{display:none}}
+</style>
 </head>
 <body>
 
@@ -952,6 +968,14 @@ footer{background:#0F110A;border-top:1px solid var(--line)}
     </div>
   </div>
 </header>
+
+<nav class="float-nav" aria-label="Section navigation">
+  <a href="#home" data-en="Top" data-zh="顶部" data-ms="Atas">Top</a>
+  <a href="#services" data-en="Services" data-zh="服务项目" data-ms="Perkhidmatan">Services</a>
+  <a href="#pricing" data-en="Pricing" data-zh="价格表" data-ms="Harga">Pricing</a>
+  <a href="#faqs" data-en="FAQ" data-zh="常见问题" data-ms="Soalan Lazim">FAQ</a>
+  <a href="#contact" data-en="Get in touch" data-zh="联系我们" data-ms="Hubungi">Get in touch</a>
+</nav>
 
 <!-- ============ HERO ============ -->
 <section id="home" class="hero">
@@ -1345,6 +1369,23 @@ footer{background:#0F110A;border-top:1px solid var(--line)}
     // delay so it plays after the hero entrance choreography
     setTimeout(function(){ cio.observe(heroMeta); }, 600);
   }
+
+  // floating section navigation active state
+  var floatLinks = Array.prototype.slice.call(document.querySelectorAll(".float-nav a"));
+  var floatTargets = floatLinks.map(function(a){ return document.querySelector(a.getAttribute("href")); }).filter(Boolean);
+  function setActiveFloatNav(){
+    var current = floatTargets[0];
+    var marker = window.scrollY + window.innerHeight * 0.38;
+    floatTargets.forEach(function(sec){
+      if(sec.offsetTop <= marker){ current = sec; }
+    });
+    floatLinks.forEach(function(a){
+      a.classList.toggle("active", current && a.getAttribute("href") === "#" + current.id);
+    });
+  }
+  window.addEventListener("scroll", setActiveFloatNav, {passive:true});
+  window.addEventListener("resize", setActiveFloatNav);
+  setActiveFloatNav();
 
   // nav shadow on scroll
   var hdr = document.querySelector("header");
