@@ -951,7 +951,14 @@ footer{background:#0F110A;border-top:1px solid var(--line)}
   .float-nav a:hover::before,.float-nav a.active::before{box-shadow:0 0 10px var(--glow-soft)}
 }
 @media(max-width:1180px){.float-nav{right:20px}.float-nav a{font-size:11px;padding-left:44px}.float-nav a:hover::before,.float-nav a.active::before{width:32px}}
-@media(max-width:960px){.float-nav{display:none}}
+@media(max-width:960px){
+  .float-nav{left:12px;right:12px;top:auto;bottom:calc(12px + env(safe-area-inset-bottom));transform:none;z-index:60;flex-direction:row;align-items:center;justify-content:space-between;gap:6px;padding:8px;background:color-mix(in srgb, var(--paper-2) 90%, transparent);border:1px solid var(--line-soft, var(--line));box-shadow:0 18px 48px -24px rgba(0,0,0,.42);backdrop-filter:blur(16px);border-radius:999px;pointer-events:auto}
+  .float-nav a{justify-content:center;min-height:36px;flex:1 1 0;padding:0 9px;border-radius:999px;font-size:10px;letter-spacing:.05em;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink-soft);opacity:.9}
+  .float-nav a::before{display:none}
+  .float-nav a:hover,.float-nav a.active{transform:none;background:var(--gold, var(--oxblood));color:var(--paper-2, #fff)}
+  body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+}
+@media(max-width:380px){.float-nav a{font-size:9px;padding-inline:6px}}
 </style>
 
 <!-- compact vertical rhythm: reduce above-the-fold and section top gaps -->
@@ -1019,6 +1026,30 @@ html{scroll-behavior:smooth}
   html{scroll-behavior:auto}
 }
 
+</style>
+
+
+<!-- viewport-fit pages for floating category navigation -->
+<style>
+:root{--float-mobile-h:72px}
+.page-fit{min-height:calc(100svh - var(--nav-h, 64px));display:flex;align-items:center}
+.page-fit > .wrap{width:100%}
+#home.page-fit{min-height:calc(100svh - var(--nav-h, 64px))}
+#services.page-fit,#pricing.page-fit,#faqs.page-fit,#contact.page-fit{padding-top:max(28px, var(--section-y, 42px));padding-bottom:max(28px, var(--section-y, 42px))}
+@media(min-width:961px){
+  #services.page-fit .svc-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #faqs.page-fit .faq-grid,#contact.page-fit .contact-grid{align-items:center}
+}
+@media(max-width:960px){
+  .page-fit{min-height:calc(100svh - var(--nav-h, 58px) - var(--float-mobile-h));align-items:start}
+  #home.page-fit{min-height:calc(100svh - var(--nav-h, 58px) - var(--float-mobile-h));align-items:center}
+  #services.page-fit,#pricing.page-fit,#faqs.page-fit,#contact.page-fit{padding-top:var(--section-y, 34px);padding-bottom:var(--section-y, 34px)}
+  .section-scroll-target{scroll-margin-top:calc(var(--nav-h, 58px) + 10px)}
+}
+@media(max-width:560px){
+  .page-fit{min-height:auto}
+  #home.page-fit{min-height:calc(100svh - var(--nav-h, 58px) - var(--float-mobile-h));align-items:start;padding-top:18px}
+}
 </style>
 
 <!-- scrolling performance: avoid laying out and painting off-screen sections -->
@@ -1481,6 +1512,7 @@ header,.float-nav{will-change:transform}
   // floating section navigation active state
   var floatLinks = Array.prototype.slice.call(document.querySelectorAll(".float-nav a"));
   var floatTargets = floatLinks.map(function(a){ return document.querySelector(a.getAttribute("href")); }).filter(Boolean);
+  floatTargets.forEach(function(sec){ sec.classList.add("page-fit"); });
   function setActiveFloatNav(){
     var current = floatTargets[0];
     var marker = window.scrollY + window.innerHeight * 0.38;
