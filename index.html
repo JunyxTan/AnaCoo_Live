@@ -1074,6 +1074,34 @@ html{scroll-behavior:smooth}
   .page-fit{min-height:auto}
   #home.page-fit{min-height:calc(100svh - var(--nav-h, 58px) - var(--float-mobile-h));align-items:start;padding-top:18px}
 }
+
+/* pricing viewport fit: keep price cards readable without overflowing compact screens */
+#pricing.page-fit{align-items:start}
+#pricing.page-fit .sec-head{margin-bottom:18px}
+#pricing.page-fit .price-grid{gap:24px}
+#pricing.page-fit .price-card{padding:24px 28px}
+#pricing.page-fit .price-card h3{font-size:clamp(24px,2.2vw,30px)}
+#pricing.page-fit .price-card .cur{font-size:10.5px}
+#pricing.page-fit .price-card .seam{margin:12px 0}
+#pricing.page-fit .prow{gap:14px;padding:7px 0}
+#pricing.page-fit .prow .nm{min-width:0;font-size:14px;line-height:1.28}
+#pricing.page-fit .prow .nm span{font-size:10.5px;margin-top:1px}
+#pricing.page-fit .prow .pr{flex:0 0 auto;font-size:clamp(18px,1.7vw,22px)}
+#pricing.page-fit .prow .pr.ask{font-size:10px;padding:4px 9px}
+#pricing.page-fit .price-note{margin-top:14px!important;padding:12px 16px;font-size:13px}
+@media(max-width:960px){
+  #pricing.page-fit .price-grid{gap:18px}
+  #pricing.page-fit .price-card{padding:22px 24px}
+}
+@media(max-width:560px){
+  #pricing.page-fit{padding-top:22px;padding-bottom:22px}
+  #pricing.page-fit .price-card{padding:18px 16px}
+  #pricing.page-fit .prow{align-items:flex-start;gap:10px;padding:8px 0}
+  #pricing.page-fit .prow .nm{font-size:13.5px}
+  #pricing.page-fit .prow .pr{font-size:18px}
+  #pricing.page-fit .price-note{font-size:12.5px;padding:11px 14px}
+}
+
 </style>
 
 <!-- scrolling performance: avoid laying out and painting off-screen sections -->
@@ -1202,7 +1230,7 @@ header,.float-nav{will-change:transform}
 </section>
 
 <!-- ============ PRICING ============ -->
-<section id="pricing" class="pad">
+<section id="pricing" class="pad page-fit">
   <div class="wrap">
     <div class="sec-head rv">
       <div>
