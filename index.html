@@ -337,6 +337,17 @@ footer::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;back
 .price-card{transition:transform .4s cubic-bezier(.2,.7,.2,1),box-shadow .4s}
 .price-card:hover{transform:translateY(-3px);box-shadow:0 26px 50px -36px rgba(40,28,12,.5)}
 
+
+/* scroll-triggered card focus for light mode */
+.scroll-focus-card{transition:background .4s,transform .4s cubic-bezier(.2,.7,.2,1),box-shadow .55s ease,border-color .55s ease}
+.scroll-focus-card.scroll-in{transform:translateY(-4px);box-shadow:0 24px 48px -34px rgba(40,28,12,.58);z-index:2}
+.svc.scroll-focus-card.scroll-in{background:var(--paper-2)}
+.svc.scroll-focus-card.scroll-in h3{color:var(--gold-deep)}
+.svc.scroll-focus-card.scroll-in .dot{opacity:1;transform:rotate(45deg) scale(1.25)}
+.pay.scroll-focus-card.scroll-in{border-color:var(--gold-soft)}
+.pay.scroll-focus-card.scroll-in .ic{transform:translateY(-2px) rotate(-6deg);background:var(--paper)}
+.price-card.scroll-focus-card.scroll-in{transform:translateY(-3px);box-shadow:0 26px 50px -36px rgba(40,28,12,.5)}
+
 /* counter number pop */
 .hero-meta .m b{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
 
@@ -1474,27 +1485,37 @@ body.section-scroll-lock{overscroll-behavior-y:contain}
   });
 
 
-  // In dark mode, make cards glow as their section scrolls into view.
-  var glowCards = Array.prototype.slice.call(document.querySelectorAll('.svc, .price-card, .pay, .form'));
-  glowCards.forEach(function(card){ card.classList.add('scroll-glow-card'); });
+  // Make card hover-style effects trigger automatically as each card scrolls into view.
+  var scrollCards = Array.prototype.slice.call(document.querySelectorAll('.svc, .price-card, .pay, .form'));
+  scrollCards.forEach(function(card){
+    card.classList.add('scroll-focus-card');
+    card.classList.add('scroll-glow-card');
+  });
   var darkGlowQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  var lightFocusQuery = window.matchMedia('(prefers-color-scheme: light)');
 
-  function setGlowCard(card, on){
-    card.classList.toggle('glow-in', !!on && darkGlowQuery.matches);
+  function cardIsInTriggerZone(card){
+    var rect = card.getBoundingClientRect();
+    return rect.top < window.innerHeight * .82 && rect.bottom > window.innerHeight * .08;
   }
 
-  if('IntersectionObserver' in window && glowCards.length){
-    var glowObserver = new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){ setGlowCard(entry.target, entry.isIntersecting); });
+  function setScrollCard(card, on){
+    card.classList.toggle('glow-in', !!on && darkGlowQuery.matches);
+    card.classList.toggle('scroll-in', !!on && lightFocusQuery.matches);
+  }
+
+  function refreshScrollCards(){
+    scrollCards.forEach(function(card){ setScrollCard(card, cardIsInTriggerZone(card)); });
+  }
+
+  if('IntersectionObserver' in window && scrollCards.length){
+    var cardObserver = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){ setScrollCard(entry.target, entry.isIntersecting); });
     }, {threshold:.42, rootMargin:'-8% 0px -18% 0px'});
-    glowCards.forEach(function(card){ glowObserver.observe(card); });
-    if(darkGlowQuery.addEventListener){
-      darkGlowQuery.addEventListener('change', function(){
-        glowCards.forEach(function(card){
-          setGlowCard(card, card.getBoundingClientRect().top < window.innerHeight * .82 && card.getBoundingClientRect().bottom > window.innerHeight * .08);
-        });
-      });
-    }
+    scrollCards.forEach(function(card){ cardObserver.observe(card); });
+    [darkGlowQuery, lightFocusQuery].forEach(function(query){
+      if(query.addEventListener){ query.addEventListener('change', refreshScrollCards); }
+    });
   }
 
   // floating section navigation active state
