@@ -929,6 +929,64 @@ footer{background:#0F110A;border-top:1px solid var(--line)}
 @media(max-width:1180px){.float-nav{right:20px}.float-nav a{font-size:11px;padding-left:44px}.float-nav a:hover::before,.float-nav a.active::before{width:32px}}
 @media(max-width:960px){.float-nav{display:none}}
 </style>
+
+<!-- compact vertical rhythm: reduce above-the-fold and section top gaps -->
+<style>
+:root{--nav-h:64px;--section-y:42px;--section-y-mobile:28px}
+.nav{height:var(--nav-h)}
+.brand-logo{height:54px}
+.foot .brand .brand-logo{height:64px}
+section{scroll-margin-top:calc(var(--nav-h) + 10px)}
+.hero{padding:0 0 38px}
+.hero-grid{gap:38px;align-items:start}
+.hero h1{margin-top:12px}
+.hero .lede{margin-top:14px;line-height:1.45}
+.hero-cta{margin-top:24px}
+.hero-meta{margin-top:28px;padding-top:20px}
+.strip .s{padding-top:22px;padding-bottom:22px}
+.pad{padding:var(--section-y) 0}
+.sec-head{margin-bottom:24px;gap:28px}
+.sec-head h2{margin-top:8px!important}
+.svc{padding:22px 28px}
+.proc-grid{gap:36px}
+.step .n{font-size:56px}
+.step .seam{margin:16px 0}
+.price-card{padding:32px 34px}
+.price-card .seam{margin:18px 0}
+.prow{padding:10px 0}
+.price-note{margin-top:18px!important;padding:14px 18px}
+.pay{padding:24px 22px}
+.pay .logo-tile,.pay .ic{margin-bottom:14px}
+.faq summary{padding:18px 0}
+.faq .a{padding-bottom:20px}
+.appt .hours{margin-top:18px;gap:8px}
+.appt .note{margin-top:16px}
+.form{padding:28px}
+.form .fr{margin-bottom:16px}
+.contact-grid,.appt-grid{gap:48px}
+.map{height:360px}
+footer{padding:42px 0 30px}
+.foot-bot{margin-top:30px;padding-top:18px}
+@media(max-width:960px){
+  :root{--nav-h:58px;--section-y:34px}
+  .brand-logo{height:48px}
+  .hero-grid{gap:28px}
+  .collage{margin-bottom:10px}
+  .strip .s{padding-top:18px;padding-bottom:18px}
+}
+@media(max-width:560px){
+  :root{--section-y:var(--section-y-mobile)}
+  .pad{padding:var(--section-y-mobile) 0}
+  .hero{padding-bottom:24px}
+  .hero-cta{margin-top:18px}
+  .hero-meta{margin-top:20px;padding-top:16px}
+  .sec-head{margin-bottom:16px}
+  .svc{padding:18px 20px}
+  .price-card,.form{padding:24px}
+  .faq summary{padding:14px 0}
+  footer{padding-top:32px}
+}
+</style>
 </head>
 <body>
 
