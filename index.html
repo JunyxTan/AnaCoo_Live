@@ -1307,6 +1307,20 @@ footer{background:#0F110A;border-top:1px solid var(--line)}
   var dEl = document.getElementById("d");
   dEl.min = new Date().toISOString().split("T")[0];
 
+  // Auto-scroll the full page after the visitor scrolls once.
+  var autoScrollStarted = false;
+  function startFullPageAutoScroll(){
+    if(autoScrollStarted || window.scrollY > 8){ return; }
+    autoScrollStarted = true;
+    var prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: prefersReducedMotion ? "auto" : "smooth"
+    });
+  }
+  window.addEventListener("wheel", startFullPageAutoScroll, {passive:true, once:true});
+  window.addEventListener("touchmove", startFullPageAutoScroll, {passive:true, once:true});
+
   // track scroll direction -> slide reveals come from below (down) or above (up)
   var lastY = window.scrollY;
   function setDir(){
