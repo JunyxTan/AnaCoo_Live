@@ -201,7 +201,10 @@ section{scroll-margin-top:90px}
 .faq-photo{position:sticky;top:110px;overflow:hidden;background:var(--paper-3);aspect-ratio:3/4;box-shadow:0 30px 60px -34px rgba(40,28,12,.6)}
 .faq-photo::after{content:"";position:absolute;inset:0;border:1px solid rgba(160,124,59,.45);pointer-events:none}
 .faq-photo img{width:100%;height:100%;object-fit:cover;filter:saturate(.92) contrast(1.02)}
-.faq{border-bottom:1px solid var(--line)}
+.faq{border-bottom:1px solid var(--line);position:relative}
+.faq.scroll-focus-card.scroll-in{border-color:var(--gold-soft);box-shadow:0 18px 42px -36px rgba(40,28,12,.58)}
+.faq.scroll-focus-card.scroll-in summary .q{color:var(--gold-deep)}
+.faq.scroll-focus-card.scroll-in summary .pm::before,.faq.scroll-focus-card.scroll-in summary .pm::after{box-shadow:0 0 10px rgba(176,101,60,.32)}
 .faq summary{list-style:none;cursor:pointer;padding:28px 0;display:flex;justify-content:space-between;align-items:center;gap:24px}
 .faq summary::-webkit-details-marker{display:none}
 .faq summary .q{font-family:var(--serif);font-size:25px;font-weight:500}
@@ -578,7 +581,10 @@ section{scroll-margin-top:80px}
 .faq-photo{position:sticky;top:110px;overflow:hidden;background:var(--paper-2);aspect-ratio:3/4;box-shadow:0 28px 60px -30px rgba(0,0,0,.7)}
 .faq-photo::after{content:"";position:absolute;inset:0;border:1px solid rgba(216,146,74,.3);pointer-events:none}
 .faq-photo img{width:100%;height:100%;object-fit:cover;filter:contrast(1.01) saturate(1.02)}
-.faq{border-bottom:1px solid var(--line);}
+.faq{border-bottom:1px solid var(--line);position:relative;}
+.faq.scroll-glow-card.glow-in{border-color:var(--oxblood)!important;box-shadow:0 10px 34px -24px var(--glow),0 0 18px -8px var(--glow-soft)!important}
+.faq.scroll-glow-card.glow-in summary .q{color:var(--paper-2);text-shadow:0 0 18px var(--glow-soft)}
+.faq.scroll-glow-card.glow-in summary .pm::before,.faq.scroll-glow-card.glow-in summary .pm::after{box-shadow:0 0 14px var(--glow),0 0 24px var(--glow-soft)}
 .faq summary{list-style:none;cursor:pointer;padding:24px 0;display:flex;justify-content:space-between;align-items:center;gap:24px}
 .faq summary::-webkit-details-marker{display:none}
 .faq summary .q{font-family:var(--serif);font-size:23px;font-weight:600}
@@ -1486,7 +1492,7 @@ body.section-scroll-lock{overscroll-behavior-y:contain}
 
 
   // Make card hover-style effects trigger automatically as each card scrolls into view.
-  var scrollCards = Array.prototype.slice.call(document.querySelectorAll('.svc, .price-card, .pay, .form'));
+  var scrollCards = Array.prototype.slice.call(document.querySelectorAll('.svc, .price-card, .pay, .form, .faq'));
   scrollCards.forEach(function(card){
     card.classList.add('scroll-focus-card');
     card.classList.add('scroll-glow-card');
