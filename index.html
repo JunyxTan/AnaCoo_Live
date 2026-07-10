@@ -1296,6 +1296,24 @@ body.section-scroll-lock{overscroll-behavior-y:contain}
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 (function(){
+  // Always start new visits at the hero instead of restoring a previous
+  // session's bottom-of-page scroll position. Keep hash links working.
+  if ("scrollRestoration" in history) {
+    history.scrollRestoration = "manual";
+  }
+
+  function resetInitialScroll(){
+    if (!window.location.hash) {
+      window.scrollTo(0, 0);
+    }
+  }
+
+  resetInitialScroll();
+  window.addEventListener("pageshow", resetInitialScroll);
+  window.addEventListener("load", function(){
+    window.setTimeout(resetInitialScroll, 0);
+  });
+
   var WA = "60123608968";
   var lang = localStorage.getItem("anacoo-lang") || "en";
 
