@@ -983,6 +983,8 @@ section{scroll-margin-top:calc(var(--nav-h) + 10px)}
 .hero-cta{margin-top:24px}
 .hero-meta{margin-top:28px;padding-top:20px}
 .strip .s{padding-top:22px;padding-bottom:22px}
+/* reserve two lines for every trust title so sub-labels line up across all columns */
+.strip .s .t{line-height:1.2;min-height:2.4em}
 .pad{padding:var(--section-y) 0}
 .sec-head{margin-bottom:24px;gap:28px}
 .sec-head h2{margin-top:8px!important}
@@ -1067,7 +1069,7 @@ html{scroll-behavior:smooth}
 :root{--float-mobile-h:72px}
 .page-fit{min-height:calc(100svh - var(--nav-h, 64px));display:flex;align-items:center}
 .page-fit > .wrap{width:100%}
-#home.page-fit{min-height:calc(100svh - var(--nav-h, 64px))}
+#home.page-fit{min-height:calc(100svh - var(--nav-h, 64px));justify-content:center}
 #services.page-fit,#pricing.page-fit,#faqs.page-fit,#contact.page-fit{padding-top:max(28px, var(--section-y, 42px));padding-bottom:max(28px, var(--section-y, 42px))}
 @media(min-width:961px){
   #services.page-fit .svc-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
