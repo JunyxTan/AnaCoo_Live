@@ -33,7 +33,7 @@
   --serif:"Spectral",Georgia,serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;overscroll-behavior:none}
 body{
   background:var(--paper);
   color:var(--ink);
@@ -44,6 +44,7 @@ body{
   letter-spacing:.01em;
   -webkit-font-smoothing:antialiased;
   overflow-x:hidden;
+  overscroll-behavior:none;
 }
 :lang(zh){font-family:"Noto Serif SC",var(--sans);}
 img{display:block;max-width:100%}
