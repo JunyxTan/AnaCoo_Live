@@ -1714,8 +1714,18 @@ header,.float-nav{will-change:transform}
 
     var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     var enableQuery  = window.matchMedia("(min-width: 1025px)");
-    var enabled = false, animating = false, cooldownUntil = 0;
-    var DURATION = 620;
+    var enabled = false, animating = false, wheelBlocked = false, lastWheelTs = 0, rearmTimer = null;
+    var DURATION = 620, QUIET = 220;
+
+    // Keep the gesture locked until the wheel stops firing (momentum decays),
+    // so one flick advances exactly one section instead of two.
+    function scheduleRearm(){
+      clearTimeout(rearmTimer);
+      rearmTimer = setTimeout(function check(){
+        if(!animating && (Date.now() - lastWheelTs) > QUIET){ wheelBlocked = false; }
+        else { rearmTimer = setTimeout(check, 60); }
+      }, 60);
+    }
 
     function headerH(){ return hdr ? hdr.offsetHeight : 64; }
     function snapY(sec){ return Math.max(0, Math.round(sec.offsetTop - headerH() - 10)); }
@@ -1736,7 +1746,6 @@ header,.float-nav{will-change:transform}
       var startY = window.scrollY, dist = target - startY;
       if(Math.abs(dist) < 2){ return; }
       animating = true;
-      cooldownUntil = Date.now() + DURATION + 180;
       if(reduceMotion.matches){
         window.scrollTo({top:target, behavior:"instant"});
         animating = false; return;
@@ -1747,7 +1756,7 @@ header,.float-nav{will-change:transform}
         var p = Math.min(1, (ts - start) / DURATION);
         window.scrollTo({top: Math.round(startY + dist * easeInOutCubic(p)), behavior:"instant"});
         if(p < 1){ requestAnimationFrame(frame); }
-        else { animating = false; cooldownUntil = Date.now() + 120; }
+        else { animating = false; }
       }
       requestAnimationFrame(frame);
     }
@@ -1779,8 +1788,11 @@ header,.float-nav{will-change:transform}
     function onWheel(e){
       if(!enabled){ return; }
       e.preventDefault();
-      if(animating || Date.now() < cooldownUntil || Math.abs(e.deltaY) < 1){ return; }
+      lastWheelTs = Date.now();
+      if(animating || wheelBlocked || Math.abs(e.deltaY) < 1){ return; }
+      wheelBlocked = true;
       go(e.deltaY > 0 ? 1 : -1);
+      scheduleRearm();
     }
 
     function typingTarget(t){
