@@ -1714,17 +1714,17 @@ header,.float-nav{will-change:transform}
 
     var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     var enableQuery  = window.matchMedia("(min-width: 1025px)");
-    var enabled = false, animating = false, wheelBlocked = false, lastWheelTs = 0, rearmTimer = null;
-    var DURATION = 620, QUIET = 220;
+    var enabled = false, animating = false, scrollings = [];
+    var DURATION = 360, WINDOW = 220;
 
-    // Keep the gesture locked until the wheel stops firing (momentum decays),
-    // so one flick advances exactly one section instead of two.
-    function scheduleRearm(){
-      clearTimeout(rearmTimer);
-      rearmTimer = setTimeout(function check(){
-        if(!animating && (Date.now() - lastWheelTs) > QUIET){ wheelBlocked = false; }
-        else { rearmTimer = setTimeout(check, 60); }
-      }, 60);
+    // Tell an intentional wheel scroll apart from a decaying momentum tail
+    // (trackpad inertia) by watching recent wheel deltas: if the latest input
+    // is steady/accelerating we act on it; if it is fading we ignore it. This
+    // keeps one flick = one section while staying responsive to a real mouse.
+    function avgDelta(list){
+      if(!list.length){ return 0; }
+      for(var i=0,s=0;i<list.length;i++){ s += list[i].d; }
+      return s / list.length;
     }
 
     function headerH(){ return hdr ? hdr.offsetHeight : 64; }
@@ -1788,11 +1788,15 @@ header,.float-nav{will-change:transform}
     function onWheel(e){
       if(!enabled){ return; }
       e.preventDefault();
-      lastWheelTs = Date.now();
-      if(animating || wheelBlocked || Math.abs(e.deltaY) < 1){ return; }
-      wheelBlocked = true;
+      var d = Math.abs(e.deltaY);
+      if(d < 1){ return; }
+      var now = Date.now(), fresh = [];
+      for(var i=0;i<scrollings.length;i++){ if(now - scrollings[i].t < WINDOW){ fresh.push(scrollings[i]); } }
+      fresh.push({t:now, d:d});
+      scrollings = fresh;
+      if(animating){ return; }                              // one section per animation
+      if(avgDelta(scrollings.slice(-3)) < avgDelta(scrollings)){ return; }  // fading momentum → ignore
       go(e.deltaY > 0 ? 1 : -1);
-      scheduleRearm();
     }
 
     function typingTarget(t){
