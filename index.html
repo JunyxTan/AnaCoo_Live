@@ -1714,8 +1714,8 @@ header,.float-nav{will-change:transform}
 
     var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     var enableQuery  = window.matchMedia("(min-width: 1025px)");
-    var enabled = false, animating = false, scrollings = [];
-    var DURATION = 360, WINDOW = 220;
+    var enabled = false, animating = false, scrollings = [], blockUntil = 0;
+    var DURATION = 360, WINDOW = 220, COOLDOWN = 300;
 
     // Tell an intentional wheel scroll apart from a decaying momentum tail
     // (trackpad inertia) by watching recent wheel deltas: if the latest input
@@ -1794,8 +1794,9 @@ header,.float-nav{will-change:transform}
       for(var i=0;i<scrollings.length;i++){ if(now - scrollings[i].t < WINDOW){ fresh.push(scrollings[i]); } }
       fresh.push({t:now, d:d});
       scrollings = fresh;
-      if(animating){ return; }                              // one section per animation
+      if(animating || now < blockUntil){ return; }          // refractory: one gesture advances one section
       if(avgDelta(scrollings.slice(-3)) < avgDelta(scrollings)){ return; }  // fading momentum → ignore
+      blockUntil = now + DURATION + COOLDOWN;
       go(e.deltaY > 0 ? 1 : -1);
     }
 
