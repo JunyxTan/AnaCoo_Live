@@ -1715,7 +1715,7 @@ header,.float-nav{will-change:transform}
     var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     var enableQuery  = window.matchMedia("(min-width: 1025px)");
     var enabled = false, animating = false, wheelBlocked = false, lastWheelTs = 0, rearmTimer = null;
-    var DURATION = 620, QUIET = 220;
+    var DURATION = 360, QUIET = 140;
 
     // Keep the gesture locked until the wheel stops firing (momentum decays),
     // so one flick advances exactly one section instead of two.
@@ -1723,8 +1723,8 @@ header,.float-nav{will-change:transform}
       clearTimeout(rearmTimer);
       rearmTimer = setTimeout(function check(){
         if(!animating && (Date.now() - lastWheelTs) > QUIET){ wheelBlocked = false; }
-        else { rearmTimer = setTimeout(check, 60); }
-      }, 60);
+        else { rearmTimer = setTimeout(check, 40); }
+      }, 40);
     }
 
     function headerH(){ return hdr ? hdr.offsetHeight : 64; }
