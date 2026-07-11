@@ -1568,6 +1568,14 @@ header,.float-nav{will-change:transform}
     window.clearTimeout(guidedScroll.unlockTimer);
   }
 
+  // Re-arm the unlock timer. The lock is only released once input has been
+  // idle for this window, so the momentum tail of a single wheel/trackpad
+  // flick cannot fire a second page jump after the first one settles.
+  function armUnlock(){
+    window.clearTimeout(guidedScroll.unlockTimer);
+    guidedScroll.unlockTimer = window.setTimeout(releaseGuidedScroll, reduceMotionQuery.matches ? 250 : 700);
+  }
+
   function scrollOnePage(direction){
     if(!direction || guidedScroll.active || scrollTargets.length < 2){ return; }
     var current = currentPageIndex();
@@ -1579,8 +1587,7 @@ header,.float-nav{will-change:transform}
       top: getTargetTop(scrollTargets[next]),
       behavior: reduceMotionQuery.matches ? 'auto' : 'smooth'
     });
-    window.clearTimeout(guidedScroll.unlockTimer);
-    guidedScroll.unlockTimer = window.setTimeout(releaseGuidedScroll, reduceMotionQuery.matches ? 250 : 850);
+    armUnlock();
   }
 
   function shouldUseNativeScroll(event){
@@ -1592,6 +1599,13 @@ header,.float-nav{will-change:transform}
     var delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
     if(Math.abs(delta) < 8){ return; }
     event.preventDefault();
+    if(guidedScroll.active){
+      // A page move is already in progress: this is continued momentum from the
+      // same flick. Keep the lock engaged (extend the idle window) instead of
+      // letting it lapse and trigger an unintended jump to the next page.
+      armUnlock();
+      return;
+    }
     scrollOnePage(delta > 0 ? 1 : -1);
   }, {passive:false});
 
@@ -1620,7 +1634,10 @@ header,.float-nav{will-change:transform}
   });
 
   if('onscrollend' in window){
-    window.addEventListener('scrollend', releaseGuidedScroll);
+    // The animation finished, but a flick's momentum may still be firing wheel
+    // events. Arm the idle timer instead of releasing outright so the lock only
+    // lifts once input has actually stopped.
+    window.addEventListener('scrollend', armUnlock);
   }
   window.addEventListener('resize', releaseGuidedScroll);
 
