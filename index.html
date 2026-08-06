@@ -888,7 +888,8 @@ footer{background:#0F110A;border-top:1px solid var(--line)}
 .foot-bot{border-top-color:var(--line)}
 
 /* real logo */
-.brand-logo{height:66px;width:auto;display:block;filter:invert(1) brightness(1.12)}
+.brand-logo{height:66px;width:auto;display:block;filter:invert(1) brightness(1.12) drop-shadow(0 0 4px rgba(255,61,174,.9)) drop-shadow(0 0 12px rgba(255,61,174,.65)) drop-shadow(0 0 28px var(--glow-soft));transition:filter .45s ease}
+header .brand:hover .brand-logo{filter:invert(1) brightness(1.16) drop-shadow(0 0 5px rgba(255,61,174,1)) drop-shadow(0 0 18px rgba(255,61,174,.8)) drop-shadow(0 0 38px var(--glow))}
 .foot .brand .brand-logo{height:74px}
 
 /* ===== MOBILE NAV FIX: keep logo from collapsing; drop header CTA on small screens ===== */
