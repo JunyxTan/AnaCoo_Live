@@ -50,13 +50,13 @@ String serviceLabel(ServiceType service, String languageCode, {String? freeText}
 }
 
 const Map<JobStatus, Map<String, String>> jobStatusLabels = {
-  JobStatus.requested: {'en': 'Requested', 'zh': '已请求', 'ms': 'Diminta'},
-  JobStatus.confirmed: {'en': 'Confirmed', 'zh': '已确认', 'ms': 'Disahkan'},
-  JobStatus.received: {'en': 'Received', 'zh': '已收件', 'ms': 'Diterima'},
-  JobStatus.inProgress: {'en': 'In progress', 'zh': '进行中', 'ms': 'Sedang dibuat'},
-  JobStatus.ready: {'en': 'Ready', 'zh': '已完成', 'ms': 'Siap'},
-  JobStatus.collected: {'en': 'Collected', 'zh': '已取件', 'ms': 'Telah diambil'},
-  JobStatus.cancelled: {'en': 'Cancelled', 'zh': '已取消', 'ms': 'Dibatalkan'},
+  JobStatus.requested: {'en': 'Request', 'zh': '请求', 'ms': 'Minta'},
+  JobStatus.confirmed: {'en': 'Confirm', 'zh': '确认', 'ms': 'Sahkan'},
+  JobStatus.received: {'en': 'Received', 'zh': '收件', 'ms': 'Terima'},
+  JobStatus.inProgress: {'en': 'Sewing', 'zh': '制作', 'ms': 'Jahit'},
+  JobStatus.ready: {'en': 'Ready', 'zh': '完成', 'ms': 'Siap'},
+  JobStatus.collected: {'en': 'Done', 'zh': '取走', 'ms': 'Ambil'},
+  JobStatus.cancelled: {'en': 'Cancel', 'zh': '取消', 'ms': 'Batal'},
 };
 
 String jobStatusLabel(JobStatus status, String languageCode) =>
@@ -75,11 +75,11 @@ String appointmentTypeLabel(AppointmentType type, String languageCode) =>
     type.name;
 
 const Map<AppointmentStatus, Map<String, String>> appointmentStatusLabels = {
-  AppointmentStatus.pending: {'en': 'Pending', 'zh': '待定', 'ms': 'Menunggu'},
-  AppointmentStatus.confirmed: {'en': 'Confirmed', 'zh': '已确认', 'ms': 'Disahkan'},
-  AppointmentStatus.done: {'en': 'Done', 'zh': '已完成', 'ms': 'Selesai'},
-  AppointmentStatus.noShow: {'en': 'No-show', 'zh': '未出现', 'ms': 'Tidak hadir'},
-  AppointmentStatus.cancelled: {'en': 'Cancelled', 'zh': '已取消', 'ms': 'Dibatalkan'},
+  AppointmentStatus.pending: {'en': 'Pending', 'zh': '待定', 'ms': 'Tunggu'},
+  AppointmentStatus.confirmed: {'en': 'OK', 'zh': '确认', 'ms': 'OK'},
+  AppointmentStatus.done: {'en': 'Done', 'zh': '完成', 'ms': 'Selesai'},
+  AppointmentStatus.noShow: {'en': 'No-show', 'zh': '未到', 'ms': 'Tiada'},
+  AppointmentStatus.cancelled: {'en': 'Cancel', 'zh': '取消', 'ms': 'Batal'},
 };
 
 String appointmentStatusLabel(AppointmentStatus status, String languageCode) =>

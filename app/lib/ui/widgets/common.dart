@@ -10,11 +10,18 @@ import '../../domain/service_labels.dart';
 import '../../l10n/app_strings.dart';
 
 class SectionHeader extends StatelessWidget {
-  const SectionHeader(this.title, {super.key, this.trailing, this.count});
+  const SectionHeader(
+    this.title, {
+    super.key,
+    this.trailing,
+    this.count,
+    this.icon,
+  });
 
   final String title;
   final Widget? trailing;
   final int? count;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +30,10 @@ class SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
       child: Row(
         children: [
+          if (icon != null) ...[
+            Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(width: 8),
+          ],
           Text(
             title,
             style: theme.textTheme.titleMedium?.copyWith(
@@ -247,7 +258,7 @@ class ScheduleWarnings extends StatelessWidget {
       };
 }
 
-/// The job pipeline as a tappable stepper.
+/// The job pipeline as a tappable icon stepper.
 class StatusStepper extends StatelessWidget {
   const StatusStepper({
     super.key,
@@ -259,6 +270,16 @@ class StatusStepper extends StatelessWidget {
   final JobStatus status;
   final String languageCode;
   final ValueChanged<JobStatus> onChanged;
+
+  static IconData iconFor(JobStatus status) => switch (status) {
+        JobStatus.requested => Icons.inbox_outlined,
+        JobStatus.confirmed => Icons.check_circle_outline,
+        JobStatus.received => Icons.download_outlined,
+        JobStatus.inProgress => Icons.content_cut,
+        JobStatus.ready => Icons.inventory_2_outlined,
+        JobStatus.collected => Icons.done_all,
+        JobStatus.cancelled => Icons.block,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -276,11 +297,12 @@ class StatusStepper extends StatelessWidget {
           for (var i = 0; i < JobStatus.pipeline.length; i++) ...[
             if (i > 0)
               Container(
-                width: 14,
+                width: 10,
                 height: 1,
                 color: theme.colorScheme.outlineVariant,
               ),
             _Step(
+              icon: iconFor(JobStatus.pipeline[i]),
               label: jobStatusLabel(JobStatus.pipeline[i], languageCode),
               reached: i <= status.step,
               current: i == status.step,
@@ -295,12 +317,14 @@ class StatusStepper extends StatelessWidget {
 
 class _Step extends StatelessWidget {
   const _Step({
+    required this.icon,
     required this.label,
     required this.reached,
     required this.current,
     required this.onTap,
   });
 
+  final IconData icon;
   final String label;
   final bool reached;
   final bool current;
@@ -319,20 +343,32 @@ class _Step extends StatelessWidget {
         : reached
             ? theme.colorScheme.onPrimaryContainer
             : theme.colorScheme.onSurfaceVariant;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Text(
-          label,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: foreground,
-            fontWeight: current ? FontWeight.w700 : FontWeight.w500,
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: foreground),
+              if (current) ...[
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: foreground,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
@@ -356,7 +392,7 @@ class DetailRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 116,
+            width: 88,
             child: Text(
               label,
               style: theme.textTheme.bodySmall?.copyWith(

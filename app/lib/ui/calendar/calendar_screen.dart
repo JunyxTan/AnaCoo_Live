@@ -116,10 +116,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: _newJobOnSelectedDay,
-        icon: const Icon(Icons.add),
-        label: Text(strings.newJob),
+        tooltip: strings.newJob,
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -370,13 +370,14 @@ class _DayAgenda extends ConsumerWidget {
                     ),
               ),
             ),
-            TextButton.icon(
+            IconButton(
+              tooltip: blocked ? strings.unblockDay : strings.blockDay,
               onPressed: () => _toggleBlock(context, ref),
               icon: Icon(
-                blocked ? Icons.event_available_outlined : Icons.event_busy_outlined,
-                size: 18,
+                blocked
+                    ? Icons.event_available_outlined
+                    : Icons.event_busy_outlined,
               ),
-              label: Text(blocked ? strings.unblockDay : strings.blockDay),
             ),
           ],
         ),

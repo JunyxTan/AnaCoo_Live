@@ -58,11 +58,17 @@ class _TemplatesScreenState extends ConsumerState<TemplatesScreen> {
                 TemplateKind.ready => strings.whatsappReady,
                 TemplateKind.reschedule => strings.whatsappReschedule,
               },
-              trailing: TextButton(
+              icon: switch (kind) {
+                TemplateKind.confirm => Icons.check_circle_outline,
+                TemplateKind.ready => Icons.inventory_2_outlined,
+                TemplateKind.reschedule => Icons.event_repeat_outlined,
+              },
+              trailing: IconButton(
+                tooltip: strings.resetToDefault,
                 onPressed: () => _write(
                   templates.resetToDefault(kind, _language),
                 ),
-                child: Text(strings.resetToDefault),
+                icon: const Icon(Icons.restart_alt, size: 18),
               ),
             ),
             _TemplateField(

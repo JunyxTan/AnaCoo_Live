@@ -157,7 +157,11 @@ class CustomerDetailScreen extends ConsumerWidget {
             icon: const Icon(Icons.add),
             label: Text(strings.newJobForCustomer),
           ),
-          SectionHeader(strings.jobDetail, count: jobs.length),
+          SectionHeader(
+            strings.jobDetail,
+            count: jobs.length,
+            icon: Icons.work_outline,
+          ),
           for (final bundle in jobs)
             ListTile(
               shape: RoundedRectangleBorder(

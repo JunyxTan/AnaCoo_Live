@@ -48,18 +48,20 @@ class ReminderSummary extends ConsumerWidget {
                 style: theme.textTheme.bodySmall,
               ),
             ),
-            TextButton(
+            IconButton(
+              tooltip: strings.edit,
               onPressed: () => _edit(context, ref, effective),
-              child: Text(strings.edit),
+              icon: const Icon(Icons.edit_outlined, size: 18),
             ),
           ],
         ),
         if (rules != null)
           Align(
             alignment: Alignment.centerLeft,
-            child: TextButton(
+            child: IconButton(
+              tooltip: strings.useDefaultReminders,
               onPressed: () => onChanged(null),
-              child: Text(strings.useDefaultReminders),
+              icon: const Icon(Icons.restart_alt, size: 18),
             ),
           ),
       ],
@@ -93,37 +95,25 @@ String describeRule(ReminderRule rule, String languageCode) {
     RelativeReminder(:final before) => () {
         if (before.inMinutes % 1440 == 0 && before.inMinutes != 0) {
           final d = before.inDays;
-          return pick(
-            '$d ${d == 1 ? 'day' : 'days'} before',
-            '提前 $d 天',
-            '$d hari sebelum',
-          );
+          return pick('-$d d', '-$d 天', '-$d h');
         }
         if (before.inMinutes % 60 == 0) {
           final h = before.inHours;
-          return pick(
-            '$h ${h == 1 ? 'hour' : 'hours'} before',
-            '提前 $h 小时',
-            '$h jam sebelum',
-          );
+          return pick('-$h h', '-$h 小时', '-$h jam');
         }
         return pick(
-          '${before.inMinutes} min before',
-          '提前 ${before.inMinutes} 分钟',
-          '${before.inMinutes} min sebelum',
+          '-${before.inMinutes} m',
+          '-${before.inMinutes} 分',
+          '-${before.inMinutes} min',
         );
       }(),
     DaysBeforeAtReminder(:final days, :final hour, :final minute) => () {
         final clock = formats.minutesAsClock(hour * 60 + minute);
-        if (days == 0) return pick('Same day at $clock', '当天 $clock', 'Hari sama jam $clock');
+        if (days == 0) return pick('$clock', '$clock', '$clock');
         if (days == 1) {
-          return pick('Day before at $clock', '前一天 $clock', 'Sehari sebelum jam $clock');
+          return pick('−1d $clock', '前天 $clock', '−1h $clock');
         }
-        return pick(
-          '$days days before at $clock',
-          '提前 $days 天 $clock',
-          '$days hari sebelum jam $clock',
-        );
+        return pick('−${days}d $clock', '−$days天 $clock', '−${days}h $clock');
       }(),
   };
 }

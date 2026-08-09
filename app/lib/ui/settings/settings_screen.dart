@@ -52,7 +52,7 @@ class _Body extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
       children: [
-        SectionHeader(strings.notificationsSection),
+        SectionHeader(strings.notificationsSection, icon: Icons.notifications_outlined),
         const _NotificationStatusCard(),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
@@ -104,7 +104,7 @@ class _Body extends ConsumerWidget {
                 _save(ref, AppSettingsCompanion(readyNudgeDays: Value(value))),
           ),
         ),
-        SectionHeader(strings.workingHours),
+        SectionHeader(strings.workingHours, icon: Icons.access_time),
         for (var weekday = 1; weekday <= 7; weekday++)
           _WeekdayRow(
             weekday: weekday,
@@ -146,9 +146,9 @@ class _Body extends ConsumerWidget {
             ),
           ),
         ),
-        SectionHeader(strings.blockedDates),
+        SectionHeader(strings.blockedDates, icon: Icons.event_busy_outlined),
         const _BlockedDatesList(),
-        SectionHeader(strings.messageTemplates),
+        SectionHeader(strings.messageTemplates, icon: Icons.chat_outlined),
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.chat_outlined),
@@ -158,9 +158,9 @@ class _Body extends ConsumerWidget {
             MaterialPageRoute<void>(builder: (_) => const TemplatesScreen()),
           ),
         ),
-        SectionHeader(strings.language),
+        SectionHeader(strings.language, icon: Icons.language),
         _LanguagePicker(current: settings.languageCode),
-        SectionHeader(strings.exportBackup),
+        SectionHeader(strings.exportBackup, icon: Icons.ios_share),
         const _BackupSection(),
       ],
     );
@@ -246,8 +246,7 @@ class _Body extends ConsumerWidget {
   }
 }
 
-/// Says plainly what the OS will and will not do, rather than letting the
-/// tailor discover it by missing an appointment.
+/// Compact OS capability status — icons first, short labels.
 class _NotificationStatusCard extends ConsumerWidget {
   const _NotificationStatusCard();
 
@@ -258,6 +257,9 @@ class _NotificationStatusCard extends ConsumerWidget {
     final pending = ref.watch(pendingNotificationsProvider).value ?? const [];
     final registered = pending.where((p) => p.registered).length;
     final deferred = pending.length - registered;
+    final theme = Theme.of(context);
+    final notificationsOn = capabilities?.notificationsAllowed ?? true;
+    final exactOn = capabilities?.exactAlarmsAllowed ?? true;
 
     return Card(
       child: Padding(
@@ -265,53 +267,62 @@ class _NotificationStatusCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (capabilities != null && !capabilities.notificationsAllowed) ...[
-              Text(strings.notificationsBlocked),
-              const SizedBox(height: 8),
-              FilledButton(
-                onPressed: () async {
-                  await ref.read(notificationServiceProvider).requestPermissions();
-                  ref.invalidate(notificationCapabilitiesProvider);
-                },
-                child: Text(strings.enableNotifications),
+            if (!notificationsOn) ...[
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                leading: Icon(
+                  Icons.notifications_off_outlined,
+                  color: theme.colorScheme.error,
+                ),
+                title: Text(strings.notificationsBlocked),
+                trailing: FilledButton(
+                  onPressed: () async {
+                    await ref
+                        .read(notificationServiceProvider)
+                        .requestPermissions();
+                    ref.invalidate(notificationCapabilitiesProvider);
+                  },
+                  child: Text(strings.enableNotifications),
+                ),
               ),
-              const Divider(height: 24),
+              const Divider(height: 16),
             ],
-            Text(
-              capabilities?.exactAlarmsAllowed ?? true
-                  ? strings.exactAlarmsOn
-                  : strings.exactAlarmsOff,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            if (capabilities != null && !capabilities.exactAlarmsAllowed) ...[
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: () async {
-                  await ref
-                      .read(notificationServiceProvider)
-                      .requestExactAlarmPermission();
-                  ref.invalidate(notificationCapabilitiesProvider);
-                },
-                child: Text(strings.grantExactAlarms),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              leading: Icon(
+                exactOn ? Icons.alarm_on_outlined : Icons.alarm_off_outlined,
               ),
-            ],
-            const SizedBox(height: 12),
-            Text(
-              strings.pendingReminders(registered),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            if (deferred > 0)
-              Text(
-                strings.deferredReminders(deferred),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+              title: Text(exactOn ? strings.exactAlarmsOn : strings.exactAlarmsOff),
+              trailing: exactOn
+                  ? null
+                  : OutlinedButton(
+                      onPressed: () async {
+                        await ref
+                            .read(notificationServiceProvider)
+                            .requestExactAlarmPermission();
+                        ref.invalidate(notificationCapabilitiesProvider);
+                      },
+                      child: Text(strings.grantExactAlarms),
                     ),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              leading: const Icon(Icons.notifications_active_outlined),
+              title: Text(strings.pendingReminders(registered)),
+              subtitle: deferred > 0
+                  ? Text(strings.deferredReminders(deferred))
+                  : null,
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: IconButton.outlined(
+                tooltip: strings.batteryExplainerTitle,
+                onPressed: () => showBatteryExplainer(context, strings),
+                icon: const Icon(Icons.battery_alert_outlined),
               ),
-            const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: () => showBatteryExplainer(context, strings),
-              icon: const Icon(Icons.battery_alert_outlined, size: 18),
-              label: Text(strings.batteryExplainerTitle),
             ),
           ],
         ),
