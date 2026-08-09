@@ -297,25 +297,17 @@ class _ImportBanner extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    strings.importDetectedTitle,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  Text(
-                    strings.importDetectedBody,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                ],
+              child: Text(
+                strings.importDetectedTitle,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
               ),
             ),
-            TextButton(onPressed: onImport, child: Text(strings.importAction)),
+            FilledButton.tonal(
+              onPressed: onImport,
+              child: Text(strings.importAction),
+            ),
             IconButton(
               icon: const Icon(Icons.close, size: 18),
               onPressed: onDismiss,

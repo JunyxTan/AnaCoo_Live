@@ -130,7 +130,7 @@ class _Body extends ConsumerWidget {
             applyJobStatusChange(context, ref, bundle: bundle, status: status),
           ),
         ),
-        SectionHeader(strings.service),
+        SectionHeader(strings.service, icon: Icons.design_services_outlined),
         DetailRow(
           label: strings.service,
           value: serviceLabel(job.service, language, freeText: job.serviceFreeText),
@@ -148,24 +148,24 @@ class _Body extends ConsumerWidget {
           label: strings.depositPaid,
           value: formats.money(job.depositPaid),
         ),
-        SectionHeader(strings.dropOff),
+        SectionHeader(strings.dropOff, icon: Icons.download_outlined),
         _AppointmentCard(
           appointment: bundle.dropOff,
           type: AppointmentType.dropOff,
           jobId: job.id,
         ),
-        SectionHeader(strings.collection),
+        SectionHeader(strings.collection, icon: Icons.upload_outlined),
         _AppointmentCard(
           appointment: bundle.collection,
           type: AppointmentType.collection,
           jobId: job.id,
         ),
         if (job.notes != null) ...[
-          SectionHeader(strings.notes),
+          SectionHeader(strings.notes, icon: Icons.notes_outlined),
           Text(job.notes!),
         ],
         if (job.rawMessage != null) ...[
-          SectionHeader(strings.rawMessage),
+          SectionHeader(strings.rawMessage, icon: Icons.chat_outlined),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
@@ -211,13 +211,14 @@ class _AppointmentCard extends ConsumerWidget {
         child: ListTile(
           leading: const Icon(Icons.event_busy_outlined),
           title: Text(strings.collectionNotSet),
-          trailing: TextButton(
+          trailing: IconButton.filledTonal(
+            tooltip: strings.addCollection,
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => JobEditorScreen(jobId: jobId),
               ),
             ),
-            child: Text(strings.addCollection),
+            icon: const Icon(Icons.add),
           ),
         ),
       );
@@ -249,10 +250,12 @@ class _AppointmentCard extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Wrap(
-              spacing: 8,
+              spacing: 6,
+              runSpacing: 4,
               children: [
                 for (final status in AppointmentStatus.values)
                   ChoiceChip(
+                    avatar: Icon(_appointmentStatusIcon(status), size: 16),
                     label: Text(appointmentStatusLabel(status, language)),
                     selected: a.status == status,
                     onSelected: (_) => ref
@@ -268,7 +271,15 @@ class _AppointmentCard extends ConsumerWidget {
   }
 }
 
-/// Confirm / Ready / Reschedule, each opening WhatsApp with a filled template.
+IconData _appointmentStatusIcon(AppointmentStatus status) => switch (status) {
+      AppointmentStatus.pending => Icons.hourglass_empty,
+      AppointmentStatus.confirmed => Icons.check,
+      AppointmentStatus.done => Icons.done_all,
+      AppointmentStatus.noShow => Icons.person_off_outlined,
+      AppointmentStatus.cancelled => Icons.close,
+    };
+
+/// Confirm / Ready / Reschedule as a compact icon button row.
 /// Confirm and Ready also advance the job pipeline so the tailor does not have
 /// to tap the stepper separately.
 class _WhatsAppActions extends ConsumerWidget {
@@ -279,26 +290,41 @@ class _WhatsAppActions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final strings = ref.watch(appStringsProvider);
-    return Column(
+    return Row(
       children: [
-        for (final kind in TemplateKind.values)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => unawaited(_send(context, ref, kind)),
-                icon: const Icon(Icons.chat_outlined, size: 18),
-                label: Text(
-                  switch (kind) {
-                    TemplateKind.confirm => strings.whatsappConfirm,
-                    TemplateKind.ready => strings.whatsappReady,
-                    TemplateKind.reschedule => strings.whatsappReschedule,
-                  },
-                ),
+        for (final kind in TemplateKind.values) ...[
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => unawaited(_send(context, ref, kind)),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    switch (kind) {
+                      TemplateKind.confirm => Icons.check_circle_outline,
+                      TemplateKind.ready => Icons.inventory_2_outlined,
+                      TemplateKind.reschedule => Icons.event_repeat_outlined,
+                    },
+                    size: 22,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    switch (kind) {
+                      TemplateKind.confirm => strings.whatsappConfirm,
+                      TemplateKind.ready => strings.whatsappReady,
+                      TemplateKind.reschedule => strings.whatsappReschedule,
+                    },
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                ],
               ),
             ),
           ),
+          if (kind != TemplateKind.values.last) const SizedBox(width: 8),
+        ],
       ],
     );
   }
@@ -404,23 +430,27 @@ Future<void> promptForCollection(
   final choice = await showDialog<_CollectionPromptChoice>(
     context: context,
     builder: (context) => AlertDialog(
+      icon: const Icon(Icons.upload_outlined),
       title: Text(strings.scheduleCollectionTitle),
-      content: Text(strings.scheduleCollectionBody(when)),
+      content: Text(when),
       actions: [
-        TextButton(
+        IconButton(
+          tooltip: strings.notNow,
           onPressed: () =>
               Navigator.of(context).pop(_CollectionPromptChoice.notNow),
-          child: Text(strings.notNow),
+          icon: const Icon(Icons.close),
         ),
-        TextButton(
+        TextButton.icon(
           onPressed: () =>
               Navigator.of(context).pop(_CollectionPromptChoice.pick),
-          child: Text(strings.pickCollectionTime),
+          icon: const Icon(Icons.edit_calendar_outlined, size: 18),
+          label: Text(strings.pickCollectionTime),
         ),
-        FilledButton(
+        FilledButton.icon(
           onPressed: () =>
               Navigator.of(context).pop(_CollectionPromptChoice.schedule),
-          child: Text(strings.scheduleSuggested),
+          icon: const Icon(Icons.check, size: 18),
+          label: Text(strings.scheduleSuggested),
         ),
       ],
     ),

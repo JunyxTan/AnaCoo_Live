@@ -173,9 +173,10 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
       appBar: AppBar(
         title: Text(_draft.isNew ? strings.newJob : strings.edit),
         actions: [
-          TextButton(
+          IconButton(
+            tooltip: strings.save,
             onPressed: _saving ? null : _save,
-            child: Text(strings.save),
+            icon: const Icon(Icons.check),
           ),
         ],
       ),
@@ -185,20 +186,20 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
           children: [
             if (widget.parsed != null) _ImportSummary(parsed: widget.parsed!),
-            SectionHeader(strings.customer),
+            SectionHeader(strings.customer, icon: Icons.person_outline),
             _customerSection(strings),
-            SectionHeader(strings.service),
+            SectionHeader(strings.service, icon: Icons.design_services_outlined),
             _serviceSection(strings, language),
-            SectionHeader(strings.dropOff),
+            SectionHeader(strings.dropOff, icon: Icons.download_outlined),
             _AppointmentEditor(
               draft: _draft.dropOff,
               type: AppointmentType.dropOff,
               excludeId: null,
               onChanged: (next) => setState(() => _draft.dropOff = next),
             ),
-            SectionHeader(strings.collection),
+            SectionHeader(strings.collection, icon: Icons.upload_outlined),
             _collectionSection(strings),
-            SectionHeader(strings.notes),
+            SectionHeader(strings.notes, icon: Icons.notes_outlined),
             TextFormField(
               controller: _notes,
               minLines: 3,
@@ -247,14 +248,10 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
           onChanged: (_) => setState(() => _selectedCustomerId = null),
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            TextButton.icon(
-              onPressed: _pickContact,
-              icon: const Icon(Icons.contacts_outlined, size: 18),
-              label: Text(strings.pickFromContacts),
-            ),
-          ],
+        IconButton.outlined(
+          tooltip: strings.pickFromContacts,
+          onPressed: _pickContact,
+          icon: const Icon(Icons.contacts_outlined),
         ),
         if (customers.isNotEmpty && _selectedCustomerId == null)
           _CustomerSuggestions(
@@ -354,20 +351,10 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
   Widget _collectionSection(AppStrings strings) {
     final collection = _draft.collection;
     if (collection == null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            strings.collectionNotSet,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _addSuggestedCollection,
-            icon: const Icon(Icons.event_available_outlined),
-            label: Text(strings.addCollection),
-          ),
-        ],
+      return OutlinedButton.icon(
+        onPressed: _addSuggestedCollection,
+        icon: const Icon(Icons.event_available_outlined),
+        label: Text(strings.addCollection),
       );
     }
     return Column(
@@ -380,10 +367,10 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
         ),
         Align(
           alignment: Alignment.centerLeft,
-          child: TextButton.icon(
+          child: IconButton(
+            tooltip: strings.setLater,
             onPressed: () => setState(() => _draft.collection = null),
-            icon: const Icon(Icons.schedule_outlined, size: 18),
-            label: Text(strings.setLater),
+            icon: const Icon(Icons.schedule_outlined),
           ),
         ),
       ],
@@ -646,33 +633,29 @@ class _UnmatchedChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.help_outline, size: 16, color: theme.colorScheme.primary),
-              const SizedBox(width: 8),
-              Text(label, style: theme.textTheme.labelLarge),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text('“$value”', style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 4),
-          Text(
-            help,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+    return Tooltip(
+      message: help,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.help_outline, size: 16, color: theme.colorScheme.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '“$value”',
+                style: theme.textTheme.bodyMedium,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-        ],
+            Text(label, style: theme.textTheme.labelSmall),
+          ],
+        ),
       ),
     );
   }
@@ -702,11 +685,23 @@ class _ImportSummary extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(strings.notUnderstood, style: theme.textTheme.labelLarge),
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Text(strings.notUnderstood, style: theme.textTheme.labelLarge),
+            ],
+          ),
           const SizedBox(height: 6),
-          for (final line in leftovers.take(6))
+          for (final line in leftovers.take(4))
             Text(
               line,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

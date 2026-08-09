@@ -86,26 +86,43 @@ class TodayScreen extends ConsumerWidget {
               ),
             ],
           ),
-          if (isQuiet) EmptyState(message: strings.quietDay, icon: Icons.wb_sunny_outlined),
+          if (isQuiet)
+            EmptyState(message: strings.nothingToday, icon: Icons.wb_sunny_outlined),
           if (overdue.isNotEmpty) ...[
-            SectionHeader(strings.overdue, count: overdue.length),
+            SectionHeader(
+              strings.overdue,
+              count: overdue.length,
+              icon: Icons.warning_amber_outlined,
+            ),
             for (final entry in overdue)
               _Tile(entry: entry, language: language, showDate: true),
           ],
           if (dropOffs.isNotEmpty) ...[
-            SectionHeader(strings.dropOffsToday, count: dropOffs.length),
+            SectionHeader(
+              strings.dropOffsToday,
+              count: dropOffs.length,
+              icon: Icons.download_outlined,
+            ),
             for (final entry in dropOffs)
               if (!overdueIds.contains(entry.appointment.id))
                 _Tile(entry: entry, language: language),
           ],
           if (collections.isNotEmpty) ...[
-            SectionHeader(strings.collectionsDueToday, count: collections.length),
+            SectionHeader(
+              strings.collectionsDueToday,
+              count: collections.length,
+              icon: Icons.upload_outlined,
+            ),
             for (final entry in collections)
               if (!overdueIds.contains(entry.appointment.id))
                 _Tile(entry: entry, language: language),
           ],
           if (ready.isNotEmpty) ...[
-            SectionHeader(strings.readyForPickup, count: ready.length),
+            SectionHeader(
+              strings.readyForPickup,
+              count: ready.length,
+              icon: Icons.inventory_2_outlined,
+            ),
             for (final bundle in ready)
               _ReadyTile(bundle: bundle, language: language),
           ],
