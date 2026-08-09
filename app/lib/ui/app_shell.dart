@@ -58,13 +58,39 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
     // Permissions, then a full re-plan: the app may have been closed for days,
     // and this is also the iOS top-up that keeps the 64-slot window full.
     final notifications = ref.read(notificationServiceProvider);
+    notifications.onNotificationTapped = _openFromNotificationPayload;
     await notifications.requestPermissions();
     await ref.read(schedulerProvider).rebuild();
     ref.invalidate(notificationCapabilitiesProvider);
     ref.invalidate(pendingNotificationsProvider);
 
+    final launchPayload = await notifications.launchPayload();
+    if (launchPayload != null) {
+      _openFromNotificationPayload(launchPayload);
+    }
+
     await _maybeShowBatteryExplainer();
     await _pollClipboard();
+  }
+
+  /// Reminder / nudge payloads are `job:<id>`; agenda payloads are
+  /// `agenda:YYYY-MM-DD`. Opening the right screen is what makes tapping a
+  /// notification useful instead of dumping the tailor on Today.
+  void _openFromNotificationPayload(String payload) {
+    if (!mounted) return;
+    if (payload.startsWith('job:')) {
+      final id = int.tryParse(payload.substring(4));
+      if (id == null) return;
+      unawaited(
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => JobDetailScreen(jobId: id)),
+        ),
+      );
+      return;
+    }
+    if (payload.startsWith('agenda:')) {
+      setState(() => _tab = 0);
+    }
   }
 
   Future<void> _maybeShowBatteryExplainer() async {

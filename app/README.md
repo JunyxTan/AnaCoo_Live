@@ -7,6 +7,18 @@ messages into scheduled work and reminds the tailor before each one.
 
 No backend, no login, no network required for anything the app does.
 
+## Day-to-day shortcuts
+
+The public booking form on anacoo.live includes **name** and **phone** so a
+pasted WhatsApp request can fill the customer without retyping. In the app:
+
+- Tapping a reminder opens that job (`job:<id>`); agenda taps land on Today.
+- Sending the **Confirm** or **Ready** WhatsApp template advances the job
+  pipeline (and confirms a pending drop-off) so the stepper does not need a
+  second tap.
+- Marking a job **Ready** (stepper or Ready template) offers to schedule the
+  still-missing collection from the turnaround suggestion.
+
 ## The shape of the problem
 
 Every job has **two** appointments — a drop-off and a collection — and the
@@ -47,7 +59,7 @@ flutter run
 
 ```sh
 flutter analyze
-flutter test                     # 96 tests, no device needed
+flutter test                     # 103 tests, no device needed
 ```
 
 `test/parser_test.dart` covers the six cases the spec calls out (the exact

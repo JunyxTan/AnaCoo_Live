@@ -28,6 +28,7 @@ class JobEditorScreen extends ConsumerStatefulWidget {
     this.jobId,
     this.initialDraft,
     this.parsed,
+    this.seedCollectionAt,
     this.onSaved,
   });
 
@@ -40,6 +41,10 @@ class JobEditorScreen extends ConsumerStatefulWidget {
   /// Present when this screen was opened from an import, so the unmatched
   /// pieces of the message can be shown alongside the fields.
   final ParsedRequest? parsed;
+
+  /// When opening an existing job that still has no collection, pre-fill one
+  /// at this shop-local time (e.g. after marking the job ready).
+  final tz.TZDateTime? seedCollectionAt;
 
   final void Function(int jobId)? onSaved;
 
@@ -102,6 +107,10 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
             collection == null ? null : AppointmentDraft.fromRow(collection);
     }
 
+    if (draft.collection == null && widget.seedCollectionAt != null) {
+      draft.collection = AppointmentDraft(at: widget.seedCollectionAt!);
+    }
+
     _draft = draft;
     _selectedCustomerId = draft.customerId;
     _name = TextEditingController(text: draft.customerName);
@@ -118,8 +127,7 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
 
     if (!mounted) return;
     setState(() => _loading = false);
-    // An imported message has no customer — that is the one field the parser
-    // can never fill, so put the cursor in it.
+    // An imported message without a name still needs the customer field first.
     if (widget.parsed != null && draft.customerName.trim().isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _customerFocus.requestFocus(),
@@ -730,8 +738,8 @@ class _RawMessageBlock extends StatelessWidget {
   }
 }
 
-/// Builds a draft from a parsed message. The customer is deliberately left
-/// blank — the request format carries neither a name nor a number.
+/// Builds a draft from a parsed WhatsApp request. Name and phone are filled
+/// when the message carries them (the website booking form does).
 JobDraft draftFromParsed(
   ParsedRequest parsed, {
   required tz.TZDateTime fallbackAt,

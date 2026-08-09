@@ -114,6 +114,18 @@ class AppStrings {
   String get collectionNotSet =>
       _p('Collection not set yet', '尚未安排取件', 'Pengambilan belum ditetapkan');
   String get addCollection => _p('Add collection', '安排取件', 'Tambah pengambilan');
+  String get scheduleCollectionTitle =>
+      _p('Schedule collection?', '安排取件？', 'Jadualkan pengambilan?');
+  String scheduleCollectionBody(String when) => _p(
+        'Suggested: $when. You can change it later.',
+        '建议：$when。之后仍可修改。',
+        'Cadangan: $when. Anda boleh ubah kemudian.',
+      );
+  String get scheduleSuggested =>
+      _p('Schedule suggested', '按建议安排', 'Jadualkan cadangan');
+  String get pickCollectionTime =>
+      _p('Pick a time', '选择时间', 'Pilih masa');
+  String get notNow => _p('Not now', '暂不', 'Nanti');
   String get duration => _p('Duration', '时长', 'Tempoh');
   String minutesShort(int n) => _p('$n min', '$n 分钟', '$n min');
   String get reminders => _p('Reminders', '提醒', 'Peringatan');

@@ -15,6 +15,8 @@ Hi AnaCoo Tailor, I'd like to book an appointment 🙂
 ⏰ *Time:* 12:00 PM
 🧵 *Service:* Pants / jeans shortening
 📝 *Notes:* —
+👤 *Name:* Siti Aminah
+📞 *Phone:* +60123456789
 ───────────────────
 Thank you! 🙏''';
 
@@ -23,7 +25,7 @@ final DateTime today = DateTime(2026, 8, 1);
 
 void main() {
   group('the exact sample message', () {
-    test('yields 2026-08-06, 12:00, pantsJeansShortening, notes null', () {
+    test('yields date, time, service, name and phone', () {
       final result = parseAppointmentRequest(sampleMessage, today: today);
 
       expect(result, isNotNull);
@@ -31,17 +33,13 @@ void main() {
       expect(result.time, const ParsedTime(12, 0));
       expect(result.service?.service, ServiceType.pantsJeansShortening);
       expect(result.notes, isNull);
+      expect(result.customerName, 'Siti Aminah');
+      expect(result.phone, '+60123456789');
     });
 
     test('keeps the original text in rawMessage', () {
       final result = parseAppointmentRequest(sampleMessage, today: today);
       expect(result!.rawMessage, sampleMessage);
-    });
-
-    test('carries no customer name or phone — the message has neither', () {
-      final result = parseAppointmentRequest(sampleMessage, today: today);
-      expect(result!.customerName, isNull);
-      expect(result.phone, isNull);
     });
 
     test('surfaces the boilerplate it did not understand', () {

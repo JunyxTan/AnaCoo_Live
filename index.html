@@ -1350,6 +1350,10 @@ header,.float-nav{will-change:transform}
           </select>
         </div>
       </div>
+      <div class="two">
+        <div class="fr"><label class="fl" for="cn" data-en="Your name" data-zh="您的姓名" data-ms="Nama anda">Your name</label><input type="text" id="cn" autocomplete="name" data-en-ph="Full name" data-zh-ph="姓名" data-ms-ph="Nama penuh" placeholder="Full name"></div>
+        <div class="fr"><label class="fl" for="cp" data-en="Phone / WhatsApp" data-zh="电话 / WhatsApp" data-ms="Telefon / WhatsApp">Phone / WhatsApp</label><input type="tel" id="cp" autocomplete="tel" inputmode="tel" data-en-ph="+60 12 345 6789" data-zh-ph="+60 12 345 6789" data-ms-ph="+60 12 345 6789" placeholder="+60 12 345 6789"></div>
+      </div>
       <div class="fr"><label class="fl" for="svc" data-en="Service needed" data-zh="所需服务" data-ms="Perkhidmatan diperlukan">Service needed</label>
         <select id="svc">
           <option value="" data-en="Select a service" data-zh="选择服务" data-ms="Pilih perkhidmatan">Select a service</option>
@@ -1497,6 +1501,8 @@ header,.float-nav{will-change:transform}
     var s = document.getElementById("svc");
     var sv = s.options[s.selectedIndex] ? s.options[s.selectedIndex].text : "";
     var n = document.getElementById("n").value;
+    var cn = document.getElementById("cn").value.trim();
+    var cp = document.getElementById("cp").value.trim();
     var lines = [];
     lines.push("✨ *AnaCoo Tailor — Appointment Request* ✨");
     lines.push("───────────────────");
@@ -1506,11 +1512,13 @@ header,.float-nav{will-change:transform}
     lines.push("⏰ *Time:* " + (t ? t : "—"));
     lines.push("🧵 *Service:* " + ((sv && s.value) ? sv : "—"));
     lines.push("📝 *Notes:* " + (n ? n : "—"));
+    lines.push("👤 *Name:* " + (cn ? cn : "—"));
+    lines.push("📞 *Phone:* " + (cp ? cp : "—"));
     lines.push("───────────────────");
     lines.push("Thank you! 🙏");
     btn.href = "https://wa.me/" + WA + "?text=" + encodeURIComponent(lines.join("\n"));
   }
-  ["d","t","svc","n"].forEach(function(id){
+  ["d","t","svc","n","cn","cp"].forEach(function(id){
     var e = document.getElementById(id);
     e.addEventListener("change", buildWA);
     e.addEventListener("input", buildWA);
