@@ -277,6 +277,26 @@ class AppDatabase extends _$AppDatabase {
         .toList();
   }
 
+  /// Live view of the same, so the clash warnings in the job editor stay
+  /// truthful while another change is saved underneath them.
+  Stream<List<AppointmentEntry>> watchAllAppointmentEntries() {
+    final query = select(appointments).join([
+      innerJoin(jobs, jobs.id.equalsExp(appointments.jobId)),
+      innerJoin(customers, customers.id.equalsExp(jobs.customerId)),
+    ]);
+    return query.watch().map(
+          (rows) => rows
+              .map(
+                (row) => AppointmentEntry(
+                  appointment: row.readTable(appointments),
+                  job: row.readTable(jobs),
+                  customer: row.readTable(customers),
+                ),
+              )
+              .toList(),
+        );
+  }
+
   Future<List<({Job job, Customer customer})>> readyJobEntries() async {
     final rows = await (select(jobs).join([
       innerJoin(customers, customers.id.equalsExp(jobs.customerId)),
