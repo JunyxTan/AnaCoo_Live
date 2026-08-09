@@ -251,6 +251,27 @@ class JobRepository {
     await scheduler.rebuild();
   }
 
+  /// Confirms a still-pending drop-off — used when the tailor sends the
+  /// WhatsApp confirm template so the appointment chip stays in step.
+  Future<void> confirmDropOffIfPending(int jobId) async {
+    final appointment = await db.appointmentOf(jobId, AppointmentType.dropOff);
+    if (appointment == null) return;
+    if (appointment.status != AppointmentStatus.pending) return;
+    await setAppointmentStatus(
+      jobId,
+      AppointmentType.dropOff,
+      AppointmentStatus.confirmed,
+    );
+  }
+
+  /// Sets (or replaces) the collection appointment without rewriting the job.
+  Future<void> scheduleCollection(int jobId, AppointmentDraft draft) async {
+    await db.upsertAppointment(
+      _appointmentCompanion(jobId, AppointmentType.collection, draft),
+    );
+    await scheduler.rebuild();
+  }
+
   Future<void> deleteJob(int jobId) async {
     for (final type in AppointmentType.values) {
       final appointment = await db.appointmentOf(jobId, type);

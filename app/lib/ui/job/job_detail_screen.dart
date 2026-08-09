@@ -1,12 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../core/formatting.dart';
 import '../../data/database.dart';
 import '../../data/enums.dart';
 import '../../data/extensions.dart';
+import '../../data/job_repository.dart';
 import '../../domain/message_templates.dart';
+import '../../domain/scheduling.dart';
 import '../../domain/service_labels.dart';
+import '../../domain/shop_time.dart';
+import '../../domain/workflow_automation.dart';
 import '../../l10n/app_strings.dart';
 import '../../providers/providers.dart';
 import '../widgets/common.dart';
@@ -119,8 +126,9 @@ class _Body extends ConsumerWidget {
         StatusStepper(
           status: job.status,
           languageCode: language,
-          onChanged: (status) =>
-              ref.read(jobRepositoryProvider).setStatus(job.id, status),
+          onChanged: (status) => unawaited(
+            applyJobStatusChange(context, ref, bundle: bundle, status: status),
+          ),
         ),
         SectionHeader(strings.service),
         DetailRow(
@@ -261,6 +269,8 @@ class _AppointmentCard extends ConsumerWidget {
 }
 
 /// Confirm / Ready / Reschedule, each opening WhatsApp with a filled template.
+/// Confirm and Ready also advance the job pipeline so the tailor does not have
+/// to tap the stepper separately.
 class _WhatsAppActions extends ConsumerWidget {
   const _WhatsAppActions({required this.bundle});
 
@@ -277,7 +287,7 @@ class _WhatsAppActions extends ConsumerWidget {
             child: SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () => _send(context, ref, kind),
+                onPressed: () => unawaited(_send(context, ref, kind)),
                 icon: const Icon(Icons.chat_outlined, size: 18),
                 label: Text(
                   switch (kind) {
@@ -315,13 +325,128 @@ class _WhatsAppActions extends ConsumerWidget {
     final ok = await ref
         .read(whatsAppLauncherProvider)
         .send(phone: phone, message: message);
-    if (!ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(strings.couldNotOpenWhatsapp)),
-      );
+    if (!ok) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings.couldNotOpenWhatsapp)),
+        );
+      }
+      return;
     }
+    if (!context.mounted) return;
+    await syncAfterWhatsAppAction(context, ref, bundle: bundle, kind: kind);
   }
 }
+
+/// Applies a stepper change and, when landing on Ready without a collection,
+/// offers to schedule one from the turnaround suggestion.
+Future<void> applyJobStatusChange(
+  BuildContext context,
+  WidgetRef ref, {
+  required JobBundle bundle,
+  required JobStatus status,
+}) async {
+  await ref.read(jobRepositoryProvider).setStatus(bundle.job.id, status);
+  if (!context.mounted) return;
+  if (shouldPromptForCollection(
+    status: status,
+    collectionSet: bundle.collection != null,
+  )) {
+    await promptForCollection(context, ref, bundle: bundle);
+  }
+}
+
+/// Advances job / drop-off status to match a successful WhatsApp send.
+Future<void> syncAfterWhatsAppAction(
+  BuildContext context,
+  WidgetRef ref, {
+  required JobBundle bundle,
+  required TemplateKind kind,
+}) async {
+  final repo = ref.read(jobRepositoryProvider);
+  final next = statusAfterWhatsAppAction(bundle.job.status, kind);
+  if (next != null) {
+    await repo.setStatus(bundle.job.id, next);
+  }
+  if (kind == TemplateKind.confirm) {
+    await repo.confirmDropOffIfPending(bundle.job.id);
+  }
+  if (!context.mounted) return;
+  if (kind == TemplateKind.ready && bundle.collection == null) {
+    await promptForCollection(context, ref, bundle: bundle);
+  }
+}
+
+/// Offers to book the missing collection at the turnaround suggestion.
+Future<void> promptForCollection(
+  BuildContext context,
+  WidgetRef ref, {
+  required JobBundle bundle,
+}) async {
+  if (bundle.collection != null) return;
+
+  final strings = ref.read(appStringsProvider);
+  final language = ref.read(languageCodeProvider);
+  final formats = Formats(language);
+  final hours = ref.read(workingHoursProvider);
+  final slot = ref.read(slotMinutesProvider);
+  final turnaround = ref.read(turnaroundDaysProvider);
+
+  final tz.TZDateTime dropOffAt = bundle.dropOff?.at ?? shopNow();
+  final suggested = suggestCollection(
+    dropOffAt,
+    hours,
+    turnaroundDays: turnaround,
+    slotMinutes: slot,
+  );
+  final when = '${formats.fullDate(suggested)} · ${formats.time(suggested)}';
+
+  final choice = await showDialog<_CollectionPromptChoice>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(strings.scheduleCollectionTitle),
+      content: Text(strings.scheduleCollectionBody(when)),
+      actions: [
+        TextButton(
+          onPressed: () =>
+              Navigator.of(context).pop(_CollectionPromptChoice.notNow),
+          child: Text(strings.notNow),
+        ),
+        TextButton(
+          onPressed: () =>
+              Navigator.of(context).pop(_CollectionPromptChoice.pick),
+          child: Text(strings.pickCollectionTime),
+        ),
+        FilledButton(
+          onPressed: () =>
+              Navigator.of(context).pop(_CollectionPromptChoice.schedule),
+          child: Text(strings.scheduleSuggested),
+        ),
+      ],
+    ),
+  );
+  if (choice == null || choice == _CollectionPromptChoice.notNow) return;
+  if (!context.mounted) return;
+
+  if (choice == _CollectionPromptChoice.schedule) {
+    await ref.read(jobRepositoryProvider).scheduleCollection(
+          bundle.job.id,
+          AppointmentDraft(at: suggested),
+        );
+    return;
+  }
+
+  await Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => JobEditorScreen(
+        jobId: bundle.job.id,
+        seedCollectionAt: suggested,
+      ),
+    ),
+  );
+}
+
+enum _CollectionPromptChoice { notNow, pick, schedule }
 
 /// Fills a reply template from a job. Shared with the Settings preview.
 String buildTemplateMessage({

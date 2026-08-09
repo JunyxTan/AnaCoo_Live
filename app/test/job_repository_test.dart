@@ -172,6 +172,49 @@ void main() {
     });
   });
 
+  group('operational helpers', () {
+    test('confirmDropOffIfPending only moves pending → confirmed', () async {
+      final jobId = await repository.save(draft());
+      final before = await db.appointmentOf(jobId, AppointmentType.dropOff);
+      expect(before!.status, AppointmentStatus.pending);
+
+      await repository.confirmDropOffIfPending(jobId);
+      expect(
+        (await db.appointmentOf(jobId, AppointmentType.dropOff))!.status,
+        AppointmentStatus.confirmed,
+      );
+
+      await repository.setAppointmentStatus(
+        jobId,
+        AppointmentType.dropOff,
+        AppointmentStatus.done,
+      );
+      await repository.confirmDropOffIfPending(jobId);
+      expect(
+        (await db.appointmentOf(jobId, AppointmentType.dropOff))!.status,
+        AppointmentStatus.done,
+      );
+    });
+
+    test('scheduleCollection inserts a collection appointment', () async {
+      final jobId = await repository.save(draft());
+      expect(await db.appointmentOf(jobId, AppointmentType.collection), isNull);
+
+      await repository.scheduleCollection(
+        jobId,
+        AppointmentDraft(at: shopDateTime(2026, 8, 9, 15, 0)),
+      );
+
+      final collection =
+          await db.appointmentOf(jobId, AppointmentType.collection);
+      expect(collection, isNotNull);
+      expect(
+        toShop(collection!.scheduledAt),
+        shopDateTime(2026, 8, 9, 15, 0),
+      );
+    });
+  });
+
   group('backup', () {
     test('round trips a full database', () async {
       final jobId = await repository.save(
