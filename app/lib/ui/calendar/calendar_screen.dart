@@ -127,18 +127,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   void _newJobOnSelectedDay() {
     final hours = ref.read(workingHoursProvider);
     final slot = ref.read(slotMinutesProvider);
+    final turnaround = ref.read(turnaroundDaysProvider);
     final now = shopNow();
     // Keep the time of day sensible: today keeps "now", other days open at the
     // first slot the shop is actually open for.
     final seed = isSameDay(_selectedDay, now)
         ? now
         : _selectedDay.add(const Duration(hours: 12));
+    final dropOff = AppointmentDraft(
+      at: snapIntoWorkingHours(seed, hours, slotMinutes: slot),
+    );
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => JobEditorScreen(
           initialDraft: JobDraft(
-            dropOff: AppointmentDraft(
-              at: snapIntoWorkingHours(seed, hours, slotMinutes: slot),
+            dropOff: dropOff,
+            collection: AppointmentDraft(
+              at: suggestCollection(
+                dropOff.at,
+                hours,
+                turnaroundDays: turnaround,
+                slotMinutes: slot,
+              ),
             ),
           ),
         ),

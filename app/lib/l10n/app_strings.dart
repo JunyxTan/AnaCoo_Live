@@ -56,6 +56,8 @@ class AppStrings {
 
   String get pasteAppointment => _p('Paste', '粘贴', 'Tampal');
   String get newJob => _p('New', '新建', 'Baharu');
+  String get nextAction => _p('Next', '下一步', 'Seterusnya');
+  String get jobBooked => _p('Booked', '已预约', 'Ditempah');
   String get dropOffsToday => _p('Drop-off', '送件', 'Hantar');
   String get collectionsDueToday => _p('Collection', '取件', 'Ambil');
   String get overdue => _p('Overdue', '逾期', 'Lewat');

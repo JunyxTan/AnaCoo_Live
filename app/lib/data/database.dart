@@ -63,7 +63,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -72,9 +72,19 @@ class AppDatabase extends _$AppDatabase {
       await _seedSettings();
     },
     onUpgrade: (m, from, to) async {
-      // Schema v1 is the first shipped version; future versions add their
-      // steps here. `stepByStep` is intentionally not used yet — there is
-      // nothing to step through.
+      if (from < 2) {
+        // Collapse the six-step pipeline onto four statuses.
+        await customStatement('''
+UPDATE jobs SET status = CASE status
+  WHEN 'requested' THEN 'booked'
+  WHEN 'confirmed' THEN 'booked'
+  WHEN 'received' THEN 'sewing'
+  WHEN 'inProgress' THEN 'sewing'
+  WHEN 'collected' THEN 'done'
+  ELSE status
+END
+''');
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -382,7 +392,7 @@ class AppDatabase extends _$AppDatabase {
         appointments.scheduledAt.isSmallerThanValue(nowUtc) &
             (appointments.status.equalsValue(AppointmentStatus.pending) |
                 appointments.status.equalsValue(AppointmentStatus.confirmed)) &
-            jobs.status.isNotIn([JobStatus.collected.name, JobStatus.cancelled.name]),
+            jobs.status.isNotIn([JobStatus.done.name, JobStatus.cancelled.name]),
       )
       ..orderBy([OrderingTerm(expression: appointments.scheduledAt)]);
     return query.watch().map(

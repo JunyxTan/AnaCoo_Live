@@ -2,17 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:timezone/timezone.dart' as tz;
 
 import '../../core/formatting.dart';
 import '../../data/database.dart';
 import '../../data/enums.dart';
 import '../../data/extensions.dart';
-import '../../data/job_repository.dart';
 import '../../domain/message_templates.dart';
-import '../../domain/scheduling.dart';
 import '../../domain/service_labels.dart';
-import '../../domain/shop_time.dart';
 import '../../domain/workflow_automation.dart';
 import '../../l10n/app_strings.dart';
 import '../../providers/providers.dart';
@@ -130,6 +126,26 @@ class _Body extends ConsumerWidget {
             applyJobStatusChange(context, ref, bundle: bundle, status: status),
           ),
         ),
+        if (job.status.next != null) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => unawaited(
+                ref.read(jobRepositoryProvider).advance(
+                      job.id,
+                      hours: ref.read(workingHoursProvider),
+                      turnaroundDays: ref.read(turnaroundDaysProvider),
+                      slotMinutes: ref.read(slotMinutesProvider),
+                    ),
+              ),
+              icon: const Icon(Icons.arrow_forward),
+              label: Text(
+                '${strings.nextAction} · ${jobStatusLabel(job.status.next!, language)}',
+              ),
+            ),
+          ),
+        ],
         SectionHeader(strings.service, icon: Icons.design_services_outlined),
         DetailRow(
           label: strings.service,
@@ -364,25 +380,26 @@ class _WhatsAppActions extends ConsumerWidget {
   }
 }
 
-/// Applies a stepper change and, when landing on Ready without a collection,
-/// offers to schedule one from the turnaround suggestion.
+/// Applies a stepper change. Landing on Ready auto-schedules collection.
 Future<void> applyJobStatusChange(
   BuildContext context,
   WidgetRef ref, {
   required JobBundle bundle,
   required JobStatus status,
 }) async {
-  await ref.read(jobRepositoryProvider).setStatus(bundle.job.id, status);
-  if (!context.mounted) return;
-  if (shouldPromptForCollection(
-    status: status,
-    collectionSet: bundle.collection != null,
-  )) {
-    await promptForCollection(context, ref, bundle: bundle);
+  final repo = ref.read(jobRepositoryProvider);
+  if (status == JobStatus.ready) {
+    await repo.ensureCollection(
+      bundle.job.id,
+      hours: ref.read(workingHoursProvider),
+      turnaroundDays: ref.read(turnaroundDaysProvider),
+      slotMinutes: ref.read(slotMinutesProvider),
+    );
   }
+  await repo.setStatus(bundle.job.id, status);
 }
 
-/// Advances job / drop-off status to match a successful WhatsApp send.
+/// Advances job status after a successful WhatsApp send.
 Future<void> syncAfterWhatsAppAction(
   BuildContext context,
   WidgetRef ref, {
@@ -391,92 +408,21 @@ Future<void> syncAfterWhatsAppAction(
 }) async {
   final repo = ref.read(jobRepositoryProvider);
   final next = statusAfterWhatsAppAction(bundle.job.status, kind);
-  if (next != null) {
-    await repo.setStatus(bundle.job.id, next);
-  }
   if (kind == TemplateKind.confirm) {
     await repo.confirmDropOffIfPending(bundle.job.id);
   }
-  if (!context.mounted) return;
-  if (kind == TemplateKind.ready && bundle.collection == null) {
-    await promptForCollection(context, ref, bundle: bundle);
+  if (next == JobStatus.ready) {
+    await repo.ensureCollection(
+      bundle.job.id,
+      hours: ref.read(workingHoursProvider),
+      turnaroundDays: ref.read(turnaroundDaysProvider),
+      slotMinutes: ref.read(slotMinutesProvider),
+    );
+  }
+  if (next != null) {
+    await repo.setStatus(bundle.job.id, next);
   }
 }
-
-/// Offers to book the missing collection at the turnaround suggestion.
-Future<void> promptForCollection(
-  BuildContext context,
-  WidgetRef ref, {
-  required JobBundle bundle,
-}) async {
-  if (bundle.collection != null) return;
-
-  final strings = ref.read(appStringsProvider);
-  final language = ref.read(languageCodeProvider);
-  final formats = Formats(language);
-  final hours = ref.read(workingHoursProvider);
-  final slot = ref.read(slotMinutesProvider);
-  final turnaround = ref.read(turnaroundDaysProvider);
-
-  final tz.TZDateTime dropOffAt = bundle.dropOff?.at ?? shopNow();
-  final suggested = suggestCollection(
-    dropOffAt,
-    hours,
-    turnaroundDays: turnaround,
-    slotMinutes: slot,
-  );
-  final when = '${formats.fullDate(suggested)} · ${formats.time(suggested)}';
-
-  final choice = await showDialog<_CollectionPromptChoice>(
-    context: context,
-    builder: (context) => AlertDialog(
-      icon: const Icon(Icons.upload_outlined),
-      title: Text(strings.scheduleCollectionTitle),
-      content: Text(when),
-      actions: [
-        IconButton(
-          tooltip: strings.notNow,
-          onPressed: () =>
-              Navigator.of(context).pop(_CollectionPromptChoice.notNow),
-          icon: const Icon(Icons.close),
-        ),
-        TextButton.icon(
-          onPressed: () =>
-              Navigator.of(context).pop(_CollectionPromptChoice.pick),
-          icon: const Icon(Icons.edit_calendar_outlined, size: 18),
-          label: Text(strings.pickCollectionTime),
-        ),
-        FilledButton.icon(
-          onPressed: () =>
-              Navigator.of(context).pop(_CollectionPromptChoice.schedule),
-          icon: const Icon(Icons.check, size: 18),
-          label: Text(strings.scheduleSuggested),
-        ),
-      ],
-    ),
-  );
-  if (choice == null || choice == _CollectionPromptChoice.notNow) return;
-  if (!context.mounted) return;
-
-  if (choice == _CollectionPromptChoice.schedule) {
-    await ref.read(jobRepositoryProvider).scheduleCollection(
-          bundle.job.id,
-          AppointmentDraft(at: suggested),
-        );
-    return;
-  }
-
-  await Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => JobEditorScreen(
-        jobId: bundle.job.id,
-        seedCollectionAt: suggested,
-      ),
-    ),
-  );
-}
-
-enum _CollectionPromptChoice { notNow, pick, schedule }
 
 /// Fills a reply template from a job. Shared with the Settings preview.
 String buildTemplateMessage({

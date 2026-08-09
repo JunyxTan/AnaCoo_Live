@@ -5,27 +5,20 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('statusAfterWhatsAppAction', () {
-    test('confirm advances requested to confirmed', () {
+    test('confirm no longer advances the pipeline', () {
       expect(
-        statusAfterWhatsAppAction(JobStatus.requested, TemplateKind.confirm),
-        JobStatus.confirmed,
-      );
-    });
-
-    test('confirm does not rewind a later status', () {
-      expect(
-        statusAfterWhatsAppAction(JobStatus.inProgress, TemplateKind.confirm),
+        statusAfterWhatsAppAction(JobStatus.booked, TemplateKind.confirm),
         isNull,
       );
     });
 
     test('ready advances earlier statuses to ready', () {
       expect(
-        statusAfterWhatsAppAction(JobStatus.confirmed, TemplateKind.ready),
+        statusAfterWhatsAppAction(JobStatus.booked, TemplateKind.ready),
         JobStatus.ready,
       );
       expect(
-        statusAfterWhatsAppAction(JobStatus.inProgress, TemplateKind.ready),
+        statusAfterWhatsAppAction(JobStatus.sewing, TemplateKind.ready),
         JobStatus.ready,
       );
     });
@@ -36,7 +29,7 @@ void main() {
         isNull,
       );
       expect(
-        statusAfterWhatsAppAction(JobStatus.collected, TemplateKind.ready),
+        statusAfterWhatsAppAction(JobStatus.done, TemplateKind.ready),
         isNull,
       );
       expect(
@@ -55,29 +48,24 @@ void main() {
     });
   });
 
-  group('shouldPromptForCollection', () {
-    test('only when ready and collection is missing', () {
-      expect(
-        shouldPromptForCollection(
-          status: JobStatus.ready,
-          collectionSet: false,
-        ),
-        isTrue,
-      );
-      expect(
-        shouldPromptForCollection(
-          status: JobStatus.ready,
-          collectionSet: true,
-        ),
-        isFalse,
-      );
-      expect(
-        shouldPromptForCollection(
-          status: JobStatus.inProgress,
-          collectionSet: false,
-        ),
-        isFalse,
-      );
+  group('nextStatusFor', () {
+    test('walks the four-step pipeline', () {
+      expect(nextStatusFor(JobStatus.booked), JobStatus.sewing);
+      expect(nextStatusFor(JobStatus.sewing), JobStatus.ready);
+      expect(nextStatusFor(JobStatus.ready), JobStatus.done);
+      expect(nextStatusFor(JobStatus.done), isNull);
+      expect(nextStatusFor(JobStatus.cancelled), isNull);
+    });
+  });
+
+  group('jobStatusFromStorage', () {
+    test('remaps legacy names', () {
+      expect(jobStatusFromStorage('requested'), JobStatus.booked);
+      expect(jobStatusFromStorage('confirmed'), JobStatus.booked);
+      expect(jobStatusFromStorage('received'), JobStatus.sewing);
+      expect(jobStatusFromStorage('inProgress'), JobStatus.sewing);
+      expect(jobStatusFromStorage('collected'), JobStatus.done);
+      expect(jobStatusFromStorage('done'), JobStatus.done);
     });
   });
 }

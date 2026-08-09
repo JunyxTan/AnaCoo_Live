@@ -80,7 +80,7 @@ void main() {
       JobsCompanion.insert(
         customerId: customerId,
         service: ServiceType.pantsJeansShortening,
-        status: JobStatus.confirmed,
+        status: JobStatus.booked,
         createdAt: DateTime.utc(2026, 8, 1),
       ),
     );
@@ -234,7 +234,7 @@ void main() {
           type: AppointmentType.dropOff,
           scheduledAtUtc: at.toUtc(),
           status: AppointmentStatus.confirmed,
-          jobStatus: JobStatus.confirmed,
+          jobStatus: JobStatus.booked,
           customerName: 'Siti',
           service: ServiceType.pantsJeansShortening,
         );

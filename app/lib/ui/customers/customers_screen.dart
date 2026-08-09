@@ -196,6 +196,10 @@ class CustomerDetailScreen extends ConsumerWidget {
   void _newJob(BuildContext context, WidgetRef ref) {
     final hours = ref.read(workingHoursProvider);
     final slot = ref.read(slotMinutesProvider);
+    final turnaround = ref.read(turnaroundDaysProvider);
+    final dropOff = AppointmentDraft(
+      at: snapIntoWorkingHours(shopNow(), hours, slotMinutes: slot),
+    );
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => JobEditorScreen(
@@ -204,8 +208,14 @@ class CustomerDetailScreen extends ConsumerWidget {
             customerName: customer.name,
             phone: customer.phone,
             whatsappNumber: customer.whatsappNumber,
-            dropOff: AppointmentDraft(
-              at: snapIntoWorkingHours(shopNow(), hours, slotMinutes: slot),
+            dropOff: dropOff,
+            collection: AppointmentDraft(
+              at: suggestCollection(
+                dropOff.at,
+                hours,
+                turnaroundDays: turnaround,
+                slotMinutes: slot,
+              ),
             ),
           ),
         ),

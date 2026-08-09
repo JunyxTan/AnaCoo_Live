@@ -89,7 +89,7 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-/// One appointment row: who, what, when, and whether it needs attention.
+/// One appointment row: who, what, when, and an optional primary action.
 class AppointmentTile extends StatelessWidget {
   const AppointmentTile({
     super.key,
@@ -97,12 +97,16 @@ class AppointmentTile extends StatelessWidget {
     required this.languageCode,
     this.onTap,
     this.showDate = false,
+    this.actionLabel,
+    this.onAction,
   });
 
   final AppointmentEntry entry;
   final String languageCode;
   final VoidCallback? onTap;
   final bool showDate;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -147,23 +151,40 @@ class AppointmentTile extends StatelessWidget {
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       ),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            formats.time(at),
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          if (showDate)
-            Text(
-              formats.dayMonth(at),
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                formats.time(at),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
+              if (showDate)
+                Text(
+                  formats.dayMonth(at),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+            ],
+          ),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: onAction,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(56, 36),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                visualDensity: VisualDensity.compact,
+              ),
+              child: Text(actionLabel!),
             ),
+          ],
         ],
       ),
     );
@@ -272,12 +293,10 @@ class StatusStepper extends StatelessWidget {
   final ValueChanged<JobStatus> onChanged;
 
   static IconData iconFor(JobStatus status) => switch (status) {
-        JobStatus.requested => Icons.inbox_outlined,
-        JobStatus.confirmed => Icons.check_circle_outline,
-        JobStatus.received => Icons.download_outlined,
-        JobStatus.inProgress => Icons.content_cut,
+        JobStatus.booked => Icons.event_available_outlined,
+        JobStatus.sewing => Icons.content_cut,
         JobStatus.ready => Icons.inventory_2_outlined,
-        JobStatus.collected => Icons.done_all,
+        JobStatus.done => Icons.done_all,
         JobStatus.cancelled => Icons.block,
       };
 

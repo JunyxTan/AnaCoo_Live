@@ -7,27 +7,26 @@ messages into scheduled work and reminds the tailor before each one.
 
 No backend, no login, no network required for anything the app does.
 
-## Day-to-day shortcuts
+## How work moves (v2)
 
-The public booking form on anacoo.live includes **name** and **phone** so a
-pasted WhatsApp request can fill the customer without retyping. In the app:
+Pipeline is four steps: **Booked → Sewing → Ready → Done**.
 
-- Tapping a reminder opens that job (`job:<id>`); agenda taps land on Today.
-- Sending the **Confirm** or **Ready** WhatsApp template advances the job
-  pipeline (and confirms a pending drop-off) so the stepper does not need a
-  second tap.
-- Marking a job **Ready** (stepper or Ready template) offers to schedule the
-  still-missing collection from the turnaround suggestion.
+- **Paste** a complete WhatsApp request (name + phone + date + time) and the
+  job is saved immediately — no editor, no detail screen. Incomplete requests
+  still open a short form.
+- Every new job gets a **collection date** from the turnaround setting.
+- Today tiles have a **Next** button that advances the job one step. Ready
+  auto-schedules collection if it was missing; Done closes both appointments.
+- WhatsApp **Ready** jumps the job to Ready; Confirm only messages the customer.
 
 Launcher icons are generated from `assets/branding/app_icon.png` (AnaCoo mark
 on black). Regenerate with `dart run flutter_launcher_icons`.
 
 ## The shape of the problem
 
-Every job has **two** appointments — a drop-off and a collection — and the
-collection date is usually unknown when the garment arrives. The app tracks
-both, suggests a collection date once a job is created, warns about clashes and
-closed days, and reminds ahead of each appointment.
+Every job has **two** appointments — a drop-off and a collection. Collection is
+scheduled up front from turnaround defaults (and can still be edited). The app
+warns about clashes and closed days, and reminds ahead of each appointment.
 
 ## Stack
 
