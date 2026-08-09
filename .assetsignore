@@ -1,0 +1,4 @@
+# The Flutter app source lives in this repo but is not part of the website.
+# Wrangler uploads everything under the assets directory (".") unless it is
+# listed here, so keep the app out of the deployed bundle.
+app/

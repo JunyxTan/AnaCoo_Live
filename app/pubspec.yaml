@@ -1,0 +1,57 @@
+name: anacoo_tailor
+description: "Offline-first appointment book for AnaCoo Tailor (internal tool)."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # State
+  flutter_riverpod: ^3.4.2
+
+  # Local DB. package:sqlite3 3.x ships the native library itself —
+  # sqlite3_flutter_libs is end-of-life and no longer needed.
+  drift: ^2.34.3
+  sqlite3: ^3.5.1
+  path_provider: ^2.1.5
+  path: ^1.9.1
+
+  # Notifications
+  flutter_local_notifications: ^22.3.0
+  timezone: ^0.11.1
+  flutter_timezone: ^5.1.0
+
+  # i18n
+  intl: ^0.20.2
+
+  # Platform integrations
+  url_launcher: ^6.3.2
+  # share_plus 13.x moved to win32 ^6, which the current stable file_picker (^11)
+  # cannot resolve against. Held on 12.x until file_picker 12 leaves beta; the
+  # clash is in a Windows-only transitive dep and this app targets Android/iOS.
+  share_plus: ^12.0.2
+  file_picker: ^11.0.3
+  receive_sharing_intent: ^1.9.0
+  flutter_contacts: ^2.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+
+  build_runner: ^2.4.15
+  drift_dev: ^2.34.0
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

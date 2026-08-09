@@ -1,0 +1,354 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/formatting.dart';
+import '../../data/database.dart';
+import '../../data/enums.dart';
+import '../../data/extensions.dart';
+import '../../domain/message_templates.dart';
+import '../../domain/service_labels.dart';
+import '../../l10n/app_strings.dart';
+import '../../providers/providers.dart';
+import '../widgets/common.dart';
+import 'job_editor_screen.dart';
+
+class JobDetailScreen extends ConsumerWidget {
+  const JobDetailScreen({super.key, required this.jobId});
+
+  final int jobId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(appStringsProvider);
+    final bundle = ref.watch(jobBundleProvider(jobId));
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(strings.jobDetail),
+        actions: [
+          IconButton(
+            tooltip: strings.edit,
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => JobEditorScreen(jobId: jobId),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: strings.delete,
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () => _confirmDelete(context, ref, strings),
+          ),
+        ],
+      ),
+      body: bundle.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text('$error')),
+        data: (data) => data == null
+            ? Center(child: Text(strings.jobDetail))
+            : _Body(bundle: data),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    AppStrings strings,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: Text(strings.deleteJobConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(strings.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(strings.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await ref.read(jobRepositoryProvider).deleteJob(jobId);
+    if (context.mounted) Navigator.of(context).pop();
+  }
+}
+
+class _Body extends ConsumerWidget {
+  const _Body({required this.bundle});
+
+  final JobBundle bundle;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(appStringsProvider);
+    final language = ref.watch(languageCodeProvider);
+    final formats = Formats(language);
+    final job = bundle.job;
+    final customer = bundle.customer;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                customer.name,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+            if (job.isRush) const RushBadge(),
+          ],
+        ),
+        if (customer.phone != null)
+          Text(
+            customer.phone!,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        const SizedBox(height: 20),
+        StatusStepper(
+          status: job.status,
+          languageCode: language,
+          onChanged: (status) =>
+              ref.read(jobRepositoryProvider).setStatus(job.id, status),
+        ),
+        SectionHeader(strings.service),
+        DetailRow(
+          label: strings.service,
+          value: serviceLabel(job.service, language, freeText: job.serviceFreeText),
+        ),
+        DetailRow(
+          label: strings.itemDescription,
+          value: job.itemDescription ?? '—',
+        ),
+        DetailRow(label: strings.quantity, value: '${job.quantity}'),
+        DetailRow(
+          label: strings.quotedPrice,
+          value: formats.money(job.quotedPrice),
+        ),
+        DetailRow(
+          label: strings.depositPaid,
+          value: formats.money(job.depositPaid),
+        ),
+        SectionHeader(strings.dropOff),
+        _AppointmentCard(
+          appointment: bundle.dropOff,
+          type: AppointmentType.dropOff,
+          jobId: job.id,
+        ),
+        SectionHeader(strings.collection),
+        _AppointmentCard(
+          appointment: bundle.collection,
+          type: AppointmentType.collection,
+          jobId: job.id,
+        ),
+        if (job.notes != null) ...[
+          SectionHeader(strings.notes),
+          Text(job.notes!),
+        ],
+        if (job.rawMessage != null) ...[
+          SectionHeader(strings.rawMessage),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+            ),
+            child: SelectableText(
+              job.rawMessage!,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        ],
+        const SizedBox(height: 24),
+        _WhatsAppActions(bundle: bundle),
+      ],
+    );
+  }
+}
+
+class _AppointmentCard extends ConsumerWidget {
+  const _AppointmentCard({
+    required this.appointment,
+    required this.type,
+    required this.jobId,
+  });
+
+  final Appointment? appointment;
+  final AppointmentType type;
+  final int jobId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(appStringsProvider);
+    final language = ref.watch(languageCodeProvider);
+    final formats = Formats(language);
+
+    if (appointment == null) {
+      return Card(
+        child: ListTile(
+          leading: const Icon(Icons.event_busy_outlined),
+          title: Text(strings.collectionNotSet),
+          trailing: TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => JobEditorScreen(jobId: jobId),
+              ),
+            ),
+            child: Text(strings.addCollection),
+          ),
+        ),
+      );
+    }
+
+    final a = appointment!;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  type == AppointmentType.dropOff
+                      ? Icons.download_outlined
+                      : Icons.upload_outlined,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  formats.fullDate(a.at),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const Spacer(),
+                Text(formats.time(a.at)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final status in AppointmentStatus.values)
+                  ChoiceChip(
+                    label: Text(appointmentStatusLabel(status, language)),
+                    selected: a.status == status,
+                    onSelected: (_) => ref
+                        .read(jobRepositoryProvider)
+                        .setAppointmentStatus(jobId, type, status),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Confirm / Ready / Reschedule, each opening WhatsApp with a filled template.
+class _WhatsAppActions extends ConsumerWidget {
+  const _WhatsAppActions({required this.bundle});
+
+  final JobBundle bundle;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(appStringsProvider);
+    return Column(
+      children: [
+        for (final kind in TemplateKind.values)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _send(context, ref, kind),
+                icon: const Icon(Icons.chat_outlined, size: 18),
+                label: Text(
+                  switch (kind) {
+                    TemplateKind.confirm => strings.whatsappConfirm,
+                    TemplateKind.ready => strings.whatsappReady,
+                    TemplateKind.reschedule => strings.whatsappReschedule,
+                  },
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _send(
+    BuildContext context,
+    WidgetRef ref,
+    TemplateKind kind,
+  ) async {
+    final strings = ref.read(appStringsProvider);
+    final message = buildTemplateMessage(
+      bundle: bundle,
+      kind: kind,
+      templates: ref.read(templatesProvider),
+      languageCode: ref.read(languageCodeProvider),
+    );
+    final phone = bundle.customer.whatsappNumber ?? bundle.customer.phone;
+    if (phone == null || phone.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.noWhatsappNumber)),
+      );
+      return;
+    }
+    final ok = await ref
+        .read(whatsAppLauncherProvider)
+        .send(phone: phone, message: message);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.couldNotOpenWhatsapp)),
+      );
+    }
+  }
+}
+
+/// Fills a reply template from a job. Shared with the Settings preview.
+String buildTemplateMessage({
+  required JobBundle bundle,
+  required TemplateKind kind,
+  required MessageTemplates templates,
+  required String languageCode,
+}) {
+  final formats = Formats(languageCode);
+  final dropOff = bundle.dropOff;
+  final collection = bundle.collection;
+  return MessageTemplates.fill(
+    templates.bodyFor(kind, languageCode),
+    {
+      'name': bundle.customer.name,
+      'date': dropOff == null ? null : formats.fullDate(dropOff.at),
+      'time': dropOff == null ? null : formats.time(dropOff.at),
+      'service': serviceLabel(
+        bundle.job.service,
+        languageCode,
+        freeText: bundle.job.serviceFreeText,
+      ),
+      'price': bundle.job.quotedPrice == null
+          ? null
+          : formats.money(bundle.job.quotedPrice),
+      'collectDate':
+          collection == null ? null : formats.fullDate(collection.at),
+    },
+  );
+}
