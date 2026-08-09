@@ -5,6 +5,7 @@ import 'package:anacoo_tailor/data/enums.dart';
 import 'package:anacoo_tailor/data/job_repository.dart';
 import 'package:anacoo_tailor/domain/notification_plan.dart';
 import 'package:anacoo_tailor/domain/shop_time.dart';
+import 'package:anacoo_tailor/domain/working_hours.dart';
 import 'package:anacoo_tailor/services/backup_service.dart';
 import 'package:anacoo_tailor/services/notification_scheduler.dart';
 import 'package:anacoo_tailor/services/notification_service.dart';
@@ -124,16 +125,16 @@ void main() {
       await repository.setStatus(jobId, JobStatus.ready);
       expect((await db.getJob(jobId)).readyAt, isNotNull);
 
-      await repository.setStatus(jobId, JobStatus.inProgress);
+      await repository.setStatus(jobId, JobStatus.sewing);
       expect((await db.getJob(jobId)).readyAt, isNull);
     });
 
-    test('collecting closes both appointments', () async {
+    test('done closes both appointments', () async {
       final jobId = await repository.save(
         draft()..collection = AppointmentDraft(at: shopDateTime(2026, 8, 9, 15, 0)),
       );
 
-      await repository.setStatus(jobId, JobStatus.collected);
+      await repository.setStatus(jobId, JobStatus.done);
 
       for (final type in AppointmentType.values) {
         final appointment = await db.appointmentOf(jobId, type);
@@ -196,22 +197,20 @@ void main() {
       );
     });
 
-    test('scheduleCollection inserts a collection appointment', () async {
+    test('advance walks booked → sewing → ready (auto collection) → done', () async {
       final jobId = await repository.save(draft());
-      expect(await db.appointmentOf(jobId, AppointmentType.collection), isNull);
+      final hours = WorkingHours.anacooDefault;
 
-      await repository.scheduleCollection(
-        jobId,
-        AppointmentDraft(at: shopDateTime(2026, 8, 9, 15, 0)),
-      );
+      expect(await repository.advance(jobId, hours: hours, turnaroundDays: 3), JobStatus.sewing);
+      expect((await db.getJob(jobId)).status, JobStatus.sewing);
 
-      final collection =
-          await db.appointmentOf(jobId, AppointmentType.collection);
-      expect(collection, isNotNull);
-      expect(
-        toShop(collection!.scheduledAt),
-        shopDateTime(2026, 8, 9, 15, 0),
-      );
+      expect(await repository.advance(jobId, hours: hours, turnaroundDays: 3), JobStatus.ready);
+      expect((await db.getJob(jobId)).status, JobStatus.ready);
+      expect(await db.appointmentOf(jobId, AppointmentType.collection), isNotNull);
+
+      expect(await repository.advance(jobId, hours: hours, turnaroundDays: 3), JobStatus.done);
+      expect((await db.getJob(jobId)).status, JobStatus.done);
+      expect(await repository.advance(jobId, hours: hours, turnaroundDays: 3), isNull);
     });
   });
 

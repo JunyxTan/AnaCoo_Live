@@ -235,8 +235,9 @@ class BackupService {
                 quantity: Value(_int(raw['quantity'], fallback: 1)),
                 quotedPrice: Value(_double(raw['quotedPrice'])),
                 depositPaid: Value(_double(raw['depositPaid'])),
-                status: _enum(JobStatus.values, raw['status']) ??
-                    JobStatus.requested,
+                status: jobStatusFromStorage(
+                  raw['status'] is String ? raw['status'] as String : null,
+                ),
                 isRush: Value(raw['isRush'] == true),
                 notes: Value(_string(raw['notes'])),
                 rawMessage: Value(_string(raw['rawMessage'])),

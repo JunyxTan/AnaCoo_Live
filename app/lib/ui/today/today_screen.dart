@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,11 +9,12 @@ import '../../data/enums.dart';
 import '../../data/extensions.dart';
 import '../../domain/service_labels.dart';
 import '../../domain/shop_time.dart';
+import '../../domain/workflow_automation.dart';
 import '../../providers/providers.dart';
 import '../job/job_detail_screen.dart';
 import '../widgets/common.dart';
 
-/// The home screen: what needs doing today, and the two ways to add work.
+/// Home: today's work, with one Next tap to advance each job.
 class TodayScreen extends ConsumerWidget {
   const TodayScreen({
     super.key,
@@ -38,12 +41,9 @@ class TodayScreen extends ConsumerWidget {
     final collections = today
         .where((e) => e.appointment.type == AppointmentType.collection)
         .toList();
-    // Overdue items are surfaced in their own section, not duplicated in the
-    // day's lists.
     final overdueIds = overdue.map((e) => e.appointment.id).toSet();
 
-    final isQuiet =
-        today.isEmpty && overdue.isEmpty && ready.isEmpty;
+    final isQuiet = today.isEmpty && overdue.isEmpty && ready.isEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -87,7 +87,10 @@ class TodayScreen extends ConsumerWidget {
             ],
           ),
           if (isQuiet)
-            EmptyState(message: strings.nothingToday, icon: Icons.wb_sunny_outlined),
+            EmptyState(
+              message: strings.nothingToday,
+              icon: Icons.wb_sunny_outlined,
+            ),
           if (overdue.isNotEmpty) ...[
             SectionHeader(
               strings.overdue,
@@ -132,7 +135,7 @@ class TodayScreen extends ConsumerWidget {
   }
 }
 
-class _Tile extends StatelessWidget {
+class _Tile extends ConsumerWidget {
   const _Tile({
     required this.entry,
     required this.language,
@@ -144,16 +147,24 @@ class _Tile extends StatelessWidget {
   final bool showDate;
 
   @override
-  Widget build(BuildContext context) => AppointmentTile(
-        entry: entry,
-        languageCode: language,
-        showDate: showDate,
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => JobDetailScreen(jobId: entry.job.id),
-          ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(appStringsProvider);
+    final next = nextStatusFor(entry.job.status);
+    return AppointmentTile(
+      entry: entry,
+      languageCode: language,
+      showDate: showDate,
+      actionLabel: next == null ? null : strings.nextAction,
+      onAction: next == null
+          ? null
+          : () => unawaited(_advance(context, ref, entry.job.id)),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => JobDetailScreen(jobId: entry.job.id),
         ),
-      );
+      ),
+    );
+  }
 }
 
 class _ReadyTile extends ConsumerWidget {
@@ -170,10 +181,12 @@ class _ReadyTile extends ConsumerWidget {
     final waitingDays = readyAt == null
         ? 0
         : startOfDay(shopNow()).difference(startOfDay(toShop(readyAt))).inDays;
+    final next = nextStatusFor(bundle.job.status);
 
     return ListTile(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      leading: const CircleAvatar(child: Icon(Icons.inventory_2_outlined, size: 20)),
+      leading:
+          const CircleAvatar(child: Icon(Icons.inventory_2_outlined, size: 20)),
       title: Text(
         bundle.customer.name,
         style: const TextStyle(fontWeight: FontWeight.w600),
@@ -185,22 +198,39 @@ class _ReadyTile extends ConsumerWidget {
           freeText: bundle.job.serviceFreeText,
         ),
       ),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (waitingDays > 0)
-            Text(
-              strings.days(waitingDays),
-              style: Theme.of(context).textTheme.labelSmall,
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (waitingDays > 0)
+                Text(
+                  strings.days(waitingDays),
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              if (bundle.collection != null)
+                Text(
+                  formats.dayMonth(bundle.collection!.at),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+            ],
+          ),
+          if (next != null) ...[
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: () => unawaited(_advance(context, ref, bundle.job.id)),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(56, 36),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                visualDensity: VisualDensity.compact,
+              ),
+              child: Text(strings.nextAction),
             ),
-          if (bundle.collection != null)
-            Text(
-              formats.dayMonth(bundle.collection!.at),
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
+          ],
         ],
       ),
       onTap: () => Navigator.of(context).push(
@@ -210,4 +240,14 @@ class _ReadyTile extends ConsumerWidget {
       ),
     );
   }
+}
+
+Future<void> _advance(BuildContext context, WidgetRef ref, int jobId) async {
+  final repo = ref.read(jobRepositoryProvider);
+  await repo.advance(
+    jobId,
+    hours: ref.read(workingHoursProvider),
+    turnaroundDays: ref.read(turnaroundDaysProvider),
+    slotMinutes: ref.read(slotMinutesProvider),
+  );
 }

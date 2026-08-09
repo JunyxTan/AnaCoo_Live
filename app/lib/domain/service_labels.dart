@@ -50,12 +50,10 @@ String serviceLabel(ServiceType service, String languageCode, {String? freeText}
 }
 
 const Map<JobStatus, Map<String, String>> jobStatusLabels = {
-  JobStatus.requested: {'en': 'Request', 'zh': '请求', 'ms': 'Minta'},
-  JobStatus.confirmed: {'en': 'Confirm', 'zh': '确认', 'ms': 'Sahkan'},
-  JobStatus.received: {'en': 'Received', 'zh': '收件', 'ms': 'Terima'},
-  JobStatus.inProgress: {'en': 'Sewing', 'zh': '制作', 'ms': 'Jahit'},
-  JobStatus.ready: {'en': 'Ready', 'zh': '完成', 'ms': 'Siap'},
-  JobStatus.collected: {'en': 'Done', 'zh': '取走', 'ms': 'Ambil'},
+  JobStatus.booked: {'en': 'Booked', 'zh': '已约', 'ms': 'Tempah'},
+  JobStatus.sewing: {'en': 'Sewing', 'zh': '制作', 'ms': 'Jahit'},
+  JobStatus.ready: {'en': 'Ready', 'zh': '待取', 'ms': 'Siap'},
+  JobStatus.done: {'en': 'Done', 'zh': '完成', 'ms': 'Selesai'},
   JobStatus.cancelled: {'en': 'Cancel', 'zh': '取消', 'ms': 'Batal'},
 };
 

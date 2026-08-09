@@ -2,7 +2,9 @@ import 'package:drift/drift.dart' show Value;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../domain/reminder_rule.dart';
+import '../domain/scheduling.dart';
 import '../domain/shop_time.dart';
+import '../domain/working_hours.dart';
 import '../services/notification_scheduler.dart';
 import 'database.dart';
 import 'enums.dart';
@@ -58,7 +60,7 @@ class JobDraft {
     this.quantity = 1,
     this.quotedPrice,
     this.depositPaid,
-    this.status = JobStatus.requested,
+    this.status = JobStatus.booked,
     this.isRush = false,
     this.notes,
     this.rawMessage,
@@ -71,9 +73,6 @@ class JobDraft {
   String customerName;
   String? phone;
   String? whatsappNumber;
-
-  /// Null when the parser could not match a service — the field stays empty
-  /// rather than being filled with a guess.
   ServiceType? service;
   String? serviceFreeText;
   String? itemDescription;
@@ -84,28 +83,20 @@ class JobDraft {
   bool isRush;
   String? notes;
   String? rawMessage;
-
   AppointmentDraft dropOff;
 
-  /// Null while the collection date is still unknown — the normal case at
-  /// drop-off, and always skippable.
+  /// Null while the collection date is still unknown — rare after auto-schedule.
   AppointmentDraft? collection;
 
-  /// A job must be attached to someone identifiable.
-  bool get hasIdentifiableCustomer =>
-      customerId != null ||
-      customerName.trim().isNotEmpty ||
-      (phone?.trim().isNotEmpty ?? false);
-
   bool get isNew => jobId == null;
+
+  bool get hasIdentifiableCustomer =>
+      customerName.trim().isNotEmpty ||
+      (phone != null && phone!.trim().isNotEmpty);
 }
 
 /// Writes jobs, keeps the two appointments in step, and re-plans notifications
 /// after every change.
-///
-/// Every mutation ends with a scheduler rebuild. That is what makes the
-/// zero-orphan promise hold in the app rather than only in tests: there is no
-/// path that edits a time without the reminders following it.
 class JobRepository {
   const JobRepository({required this.db, required this.scheduler});
 
@@ -141,7 +132,6 @@ class JobRepository {
       );
     } else {
       jobId = draft.jobId!;
-      // Keep the original readyAt if the job was already ready.
       final existing = await db.getJob(jobId);
       await db.updateJob(
         jobId,
@@ -209,25 +199,79 @@ class JobRepository {
 
   Future<void> setStatus(int jobId, JobStatus status) async {
     await db.setJobStatus(jobId, status);
-    // Collecting the garment closes both appointments off.
-    if (status == JobStatus.collected) {
+    if (status == JobStatus.sewing) {
+      await _markAppointmentDone(jobId, AppointmentType.dropOff);
+    }
+    if (status == JobStatus.done) {
       for (final type in AppointmentType.values) {
-        final appointment = await db.appointmentOf(jobId, type);
-        if (appointment == null || !appointment.status.isLive) continue;
-        await db.upsertAppointment(
-          AppointmentsCompanion.insert(
-            jobId: jobId,
-            type: type,
-            scheduledAt: appointment.scheduledAt,
-            durationMinutes: Value(appointment.durationMinutes),
-            status: AppointmentStatus.done,
-            reminderRules: Value(appointment.reminderRules),
-            notes: Value(appointment.notes),
-          ),
-        );
+        await _markAppointmentDone(jobId, type);
       }
     }
     await scheduler.rebuild();
+  }
+
+  /// Advances one step on the happy path. Returns the new status, or null if
+  /// already closed / at the end.
+  Future<JobStatus?> advance(
+    int jobId, {
+    required WorkingHours hours,
+    required int turnaroundDays,
+    int slotMinutes = 30,
+  }) async {
+    final job = await db.getJob(jobId);
+    final next = job.status.next;
+    if (next == null) return null;
+
+    if (next == JobStatus.ready) {
+      await ensureCollection(
+        jobId,
+        hours: hours,
+        turnaroundDays: turnaroundDays,
+        slotMinutes: slotMinutes,
+      );
+    }
+    await setStatus(jobId, next);
+    return next;
+  }
+
+  /// Schedules a collection from turnaround defaults when none exists yet.
+  Future<void> ensureCollection(
+    int jobId, {
+    required WorkingHours hours,
+    required int turnaroundDays,
+    int slotMinutes = 30,
+  }) async {
+    final existing = await db.appointmentOf(jobId, AppointmentType.collection);
+    if (existing != null) return;
+    final dropOff = await db.appointmentOf(jobId, AppointmentType.dropOff);
+    final base = dropOff == null ? shopNow() : toShop(dropOff.scheduledAt);
+    await scheduleCollection(
+      jobId,
+      AppointmentDraft(
+        at: suggestCollection(
+          base,
+          hours,
+          turnaroundDays: turnaroundDays,
+          slotMinutes: slotMinutes,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _markAppointmentDone(int jobId, AppointmentType type) async {
+    final appointment = await db.appointmentOf(jobId, type);
+    if (appointment == null || !appointment.status.isLive) return;
+    await db.upsertAppointment(
+      AppointmentsCompanion.insert(
+        jobId: jobId,
+        type: type,
+        scheduledAt: appointment.scheduledAt,
+        durationMinutes: Value(appointment.durationMinutes),
+        status: AppointmentStatus.done,
+        reminderRules: Value(appointment.reminderRules),
+        notes: Value(appointment.notes),
+      ),
+    );
   }
 
   Future<void> setAppointmentStatus(
@@ -251,8 +295,6 @@ class JobRepository {
     await scheduler.rebuild();
   }
 
-  /// Confirms a still-pending drop-off — used when the tailor sends the
-  /// WhatsApp confirm template so the appointment chip stays in step.
   Future<void> confirmDropOffIfPending(int jobId) async {
     final appointment = await db.appointmentOf(jobId, AppointmentType.dropOff);
     if (appointment == null) return;
@@ -264,7 +306,6 @@ class JobRepository {
     );
   }
 
-  /// Sets (or replaces) the collection appointment without rewriting the job.
   Future<void> scheduleCollection(int jobId, AppointmentDraft draft) async {
     await db.upsertAppointment(
       _appointmentCompanion(jobId, AppointmentType.collection, draft),

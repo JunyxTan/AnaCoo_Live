@@ -11,25 +11,24 @@ enum ServiceType {
   other,
 }
 
-/// `requested → confirmed → received → inProgress → ready → collected`,
+/// Four-step shop pipeline: `booked → sewing → ready → done`,
 /// with `cancelled` reachable from anywhere.
+///
+/// Older names (`requested`, `confirmed`, `received`, `inProgress`,
+/// `collected`) are remapped in schema v2 and on backup import.
 enum JobStatus {
-  requested,
-  confirmed,
-  received,
-  inProgress,
+  booked,
+  sewing,
   ready,
-  collected,
+  done,
   cancelled;
 
-  /// The happy-path pipeline, in order, for the status stepper.
+  /// The happy-path pipeline, in order, for the status stepper / Next button.
   static const List<JobStatus> pipeline = [
-    JobStatus.requested,
-    JobStatus.confirmed,
-    JobStatus.received,
-    JobStatus.inProgress,
+    JobStatus.booked,
+    JobStatus.sewing,
     JobStatus.ready,
-    JobStatus.collected,
+    JobStatus.done,
   ];
 
   bool get isCancelled => this == JobStatus.cancelled;
@@ -44,7 +43,7 @@ enum JobStatus {
   }
 
   /// Work is finished and off the board.
-  bool get isClosed => this == JobStatus.collected || isCancelled;
+  bool get isClosed => this == JobStatus.done || isCancelled;
 }
 
 enum AppointmentType { dropOff, collection }
@@ -57,5 +56,29 @@ enum AppointmentStatus {
   cancelled;
 
   /// Cancelled and already-happened appointments carry no future reminders.
-  bool get isLive => this == AppointmentStatus.pending || this == AppointmentStatus.confirmed;
+  bool get isLive =>
+      this == AppointmentStatus.pending || this == AppointmentStatus.confirmed;
+}
+
+/// Remaps status strings from schema v1 / old backups onto the v2 enum names.
+JobStatus jobStatusFromStorage(String? raw) {
+  switch (raw) {
+    case 'requested':
+    case 'confirmed':
+    case 'booked':
+      return JobStatus.booked;
+    case 'received':
+    case 'inProgress':
+    case 'sewing':
+      return JobStatus.sewing;
+    case 'ready':
+      return JobStatus.ready;
+    case 'collected':
+    case 'done':
+      return JobStatus.done;
+    case 'cancelled':
+      return JobStatus.cancelled;
+    default:
+      return JobStatus.booked;
+  }
 }

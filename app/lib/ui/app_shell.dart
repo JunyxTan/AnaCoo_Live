@@ -138,11 +138,8 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
     await _handleCandidate(candidate);
   }
 
-  /// Opens the import screen for a candidate.
-  ///
-  /// A message that did not parse still opens a form — the raw text goes into
-  /// notes and the tailor fills the rest in. Never a blank screen, never a
-  /// silent no-op, never a bare error toast.
+  /// Imports a candidate. Complete requests save in one shot and stay on Today;
+  /// incomplete ones open the editor for a quick fix.
   Future<void> _handleCandidate(IntakeCandidate candidate) async {
     if (!mounted) return;
     setState(() => _banner = null);
@@ -150,6 +147,7 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
     final strings = ref.read(appStringsProvider);
     final hours = ref.read(workingHoursProvider);
     final slot = ref.read(slotMinutesProvider);
+    final turnaround = ref.read(turnaroundDaysProvider);
     final fallback = snapIntoWorkingHours(shopNow(), hours, slotMinutes: slot);
 
     final parsed = candidate.parsed;
@@ -165,6 +163,42 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
             defaultDurationMinutes: 15,
           );
 
+    draft.collection ??= AppointmentDraft(
+      at: suggestCollection(
+        draft.dropOff.at,
+        hours,
+        turnaroundDays: turnaround,
+        slotMinutes: slot,
+      ),
+    );
+
+    final canOneShot = parsed != null &&
+        draft.hasIdentifiableCustomer &&
+        parsed.date != null &&
+        parsed.time != null;
+
+    if (canOneShot) {
+      final jobId = await ref.read(jobRepositoryProvider).save(draft);
+      await ref.read(intakeServiceProvider).markImported(candidate);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(strings.jobBooked),
+          action: SnackBarAction(
+            label: strings.edit,
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => JobDetailScreen(jobId: jobId),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+      return;
+    }
+
     if (parsed == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(strings.couldNotParse)),
@@ -179,21 +213,27 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
     if (jobId == null) return;
 
     await ref.read(intakeServiceProvider).markImported(candidate);
-    if (!mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => JobDetailScreen(jobId: jobId)),
-    );
   }
 
   void _newJob() {
     final hours = ref.read(workingHoursProvider);
     final slot = ref.read(slotMinutesProvider);
+    final turnaround = ref.read(turnaroundDaysProvider);
+    final dropOff = AppointmentDraft(
+      at: snapIntoWorkingHours(shopNow(), hours, slotMinutes: slot),
+    );
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => JobEditorScreen(
           initialDraft: JobDraft(
-            dropOff: AppointmentDraft(
-              at: snapIntoWorkingHours(shopNow(), hours, slotMinutes: slot),
+            dropOff: dropOff,
+            collection: AppointmentDraft(
+              at: suggestCollection(
+                dropOff.at,
+                hours,
+                turnaroundDays: turnaround,
+                slotMinutes: slot,
+              ),
             ),
           ),
         ),
