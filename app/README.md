@@ -19,6 +19,9 @@ pasted WhatsApp request can fill the customer without retyping. In the app:
 - Marking a job **Ready** (stepper or Ready template) offers to schedule the
   still-missing collection from the turnaround suggestion.
 
+Launcher icons are generated from `assets/branding/app_icon.png` (AnaCoo mark
+on black). Regenerate with `dart run flutter_launcher_icons`.
+
 ## The shape of the problem
 
 Every job has **two** appointments — a drop-off and a collection — and the
