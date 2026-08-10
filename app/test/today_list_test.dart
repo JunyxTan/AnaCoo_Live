@@ -102,32 +102,62 @@ void main() {
     });
   });
 
-  group('buildAppointmentItems all-time list', () {
-    test('lists appointments across different days', () async {
-      final past = await saveNamed(
-        name: 'Amina',
+  group('buildAppointmentItems active list', () {
+    test('hides past appointments from the list while keeping DB history',
+        () async {
+      final history = await saveNamed(
+        name: 'Old',
+        at: shopDateTime(2026, 7, 1, 11, 0),
+      );
+      await repository.setStatus(history.job.id, JobStatus.done);
+      final overdue = await saveNamed(
+        name: 'Late',
         at: shopDateTime(2026, 8, 1, 11, 0),
       );
-      final future = await saveNamed(
-        name: 'Budi',
+      final upcoming = await saveNamed(
+        name: 'Soon',
         at: shopDateTime(2026, 8, 20, 14, 0),
-        type: AppointmentType.collection,
       );
+      final nowUtc = shopDateTime(2026, 8, 10, 12, 0).toUtc();
+      final stored = await db.allAppointmentEntries();
+
+      // History + overdue remain stored.
+      expect(stored, hasLength(3));
+      expect(stored.any((e) => e.customer.name == 'Old'), isTrue);
+      expect(stored.any((e) => e.customer.name == 'Late'), isTrue);
 
       final items = buildAppointmentItems(
-        entries: [past, future],
+        entries: stored,
         filter: AppointmentFilter.all,
         sort: AppointmentSort.timeAsc,
+        nowUtc: nowUtc,
+        hideHistory: true,
       );
 
-      expect(items.map((e) => e.customer.name), ['Amina', 'Budi']);
+      // Active list shows only upcoming; past is hidden.
+      expect(items.map((e) => e.customer.name), ['Soon']);
+      expect(upcoming.customer.name, 'Soon');
+
+      final overdueOnly = buildAppointmentItems(
+        entries: stored,
+        filter: AppointmentFilter.overdue,
+        sort: AppointmentSort.timeAsc,
+        nowUtc: nowUtc,
+        hideHistory: true,
+      );
+      expect(overdueOnly.map((e) => e.customer.name), ['Late']);
+      expect(isAppointmentOverdue(overdue, nowUtc), isTrue);
     });
 
-    test('filters by type, rush, and overdue', () async {
+    test('type filters only apply to upcoming rows', () async {
       final pastRush = await saveNamed(
         name: 'Zara',
         at: shopDateTime(2026, 7, 1, 11, 0),
         rush: true,
+      );
+      final upcomingDropOff = await saveNamed(
+        name: 'Budi',
+        at: shopDateTime(2026, 9, 1, 11, 0),
       );
       final upcoming = await saveNamed(
         name: 'Amina',
@@ -135,37 +165,41 @@ void main() {
         type: AppointmentType.collection,
       );
       final nowUtc = shopDateTime(2026, 8, 10, 12, 0).toUtc();
+      final stored = [pastRush, upcomingDropOff, upcoming];
 
       expect(
         buildAppointmentItems(
-          entries: [pastRush, upcoming],
+          entries: stored,
           filter: AppointmentFilter.dropOff,
           sort: AppointmentSort.timeAsc,
           nowUtc: nowUtc,
+          hideHistory: true,
         ).map((e) => e.customer.name),
-        ['Zara'],
+        ['Budi'],
       );
       expect(
         buildAppointmentItems(
-          entries: [pastRush, upcoming],
-          filter: AppointmentFilter.rush,
+          entries: stored,
+          filter: AppointmentFilter.collection,
           sort: AppointmentSort.timeAsc,
           nowUtc: nowUtc,
+          hideHistory: true,
         ).map((e) => e.customer.name),
-        ['Zara'],
+        ['Amina'],
       );
       expect(
         buildAppointmentItems(
-          entries: [pastRush, upcoming],
+          entries: stored,
           filter: AppointmentFilter.overdue,
           sort: AppointmentSort.timeAsc,
           nowUtc: nowUtc,
+          hideHistory: true,
         ).map((e) => e.customer.name),
         ['Zara'],
       );
     });
 
-    test('sorts by name and time', () async {
+    test('sorts by name and time among upcoming rows', () async {
       final late = await saveNamed(
         name: 'Zara',
         at: shopDateTime(2026, 8, 20, 16, 0),
@@ -173,14 +207,17 @@ void main() {
       );
       final early = await saveNamed(
         name: 'Amina',
-        at: shopDateTime(2026, 8, 1, 11, 0),
+        at: shopDateTime(2026, 8, 12, 11, 0),
       );
+      final nowUtc = shopDateTime(2026, 8, 10, 12, 0).toUtc();
 
       expect(
         buildAppointmentItems(
           entries: [late, early],
           filter: AppointmentFilter.all,
           sort: AppointmentSort.name,
+          nowUtc: nowUtc,
+          hideHistory: true,
         ).map((e) => e.customer.name),
         ['Amina', 'Zara'],
       );
@@ -189,6 +226,8 @@ void main() {
           entries: [late, early],
           filter: AppointmentFilter.all,
           sort: AppointmentSort.timeDesc,
+          nowUtc: nowUtc,
+          hideHistory: true,
         ).map((e) => e.customer.name),
         ['Zara', 'Amina'],
       );
@@ -197,6 +236,8 @@ void main() {
           entries: [late, early],
           filter: AppointmentFilter.all,
           sort: AppointmentSort.rushFirst,
+          nowUtc: nowUtc,
+          hideHistory: true,
         ).map((e) => e.customer.name),
         ['Zara', 'Amina'],
       );

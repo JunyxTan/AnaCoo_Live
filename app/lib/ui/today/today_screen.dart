@@ -13,7 +13,8 @@ import '../../providers/providers.dart';
 import '../job/job_detail_screen.dart';
 import '../widgets/common.dart';
 
-/// Home: every appointment across all time, with filter + sort.
+/// Home: upcoming appointments (past kept in DB as history; Overdue filter
+/// surfaces late live items).
 class TodayScreen extends ConsumerStatefulWidget {
   const TodayScreen({
     super.key,
@@ -46,6 +47,10 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
       filter: _filter,
       sort: _sort,
       nowUtc: nowUtc,
+      hideHistory: true,
+    );
+    final hasActive = appointments.any(
+      (entry) => !isAppointmentPast(entry, nowUtc),
     );
 
     return Scaffold(
@@ -123,12 +128,12 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
           ),
           if (items.isEmpty)
             EmptyState(
-              message: appointments.isEmpty
-                  ? strings.noAppointments
-                  : strings.noMatchingAppointments,
-              icon: appointments.isEmpty
-                  ? Icons.event_note_outlined
-                  : Icons.search_off_outlined,
+              message: hasActive
+                  ? strings.noMatchingAppointments
+                  : strings.noAppointments,
+              icon: hasActive
+                  ? Icons.search_off_outlined
+                  : Icons.event_note_outlined,
             )
           else ...[
             SectionHeader(
