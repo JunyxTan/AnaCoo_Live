@@ -31,8 +31,8 @@ class TodayScreen extends ConsumerStatefulWidget {
 }
 
 class _TodayScreenState extends ConsumerState<TodayScreen> {
-  TodayFilter _filter = TodayFilter.all;
-  TodaySort _sort = TodaySort.timeAsc;
+  AppointmentFilter _filter = AppointmentFilter.all;
+  AppointmentSort _sort = AppointmentSort.timeAsc;
 
   @override
   Widget build(BuildContext context) {
@@ -101,14 +101,14 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => unawaited(_pickFilter(strings)),
                   icon: Icon(
-                    _filter == TodayFilter.all
+                    _filter == AppointmentFilter.all
                         ? Icons.filter_list_outlined
                         : Icons.filter_alt,
                   ),
                   label: Text(
-                    _filter == TodayFilter.all
+                    _filter == AppointmentFilter.all
                         ? strings.filter
-                        : _filterLabel(strings, _filter),
+                        : strings.appointmentFilterLabel(_filter),
                   ),
                 ),
               ),
@@ -118,9 +118,9 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                   onPressed: () => unawaited(_pickSort(strings)),
                   icon: const Icon(Icons.sort),
                   label: Text(
-                    _sort == TodaySort.timeAsc
+                    _sort == AppointmentSort.timeAsc
                         ? strings.sort
-                        : _sortLabel(strings, _sort),
+                        : strings.appointmentSortLabel(_sort),
                   ),
                 ),
               ),
@@ -160,17 +160,17 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   }
 
   Future<void> _pickFilter(AppStrings strings) async {
-    final choice = await showModalBottomSheet<TodayFilter>(
+    final choice = await showModalBottomSheet<AppointmentFilter>(
       context: context,
       showDragHandle: true,
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            for (final filter in TodayFilter.values)
+            for (final filter in todayAppointmentFilters)
               ListTile(
                 leading: Icon(_filterIcon(filter)),
-                title: Text(_filterLabel(strings, filter)),
+                title: Text(strings.appointmentFilterLabel(filter)),
                 trailing: filter == _filter
                     ? Icon(
                         Icons.check,
@@ -188,17 +188,17 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   }
 
   Future<void> _pickSort(AppStrings strings) async {
-    final choice = await showModalBottomSheet<TodaySort>(
+    final choice = await showModalBottomSheet<AppointmentSort>(
       context: context,
       showDragHandle: true,
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            for (final sort in TodaySort.values)
+            for (final sort in AppointmentSort.values)
               ListTile(
                 leading: Icon(_sortIcon(sort)),
-                title: Text(_sortLabel(strings, sort)),
+                title: Text(strings.appointmentSortLabel(sort)),
                 trailing: sort == _sort
                     ? Icon(
                         Icons.check,
@@ -216,36 +216,20 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   }
 }
 
-String _filterLabel(AppStrings strings, TodayFilter filter) => switch (filter) {
-      TodayFilter.all => strings.filterAll,
-      TodayFilter.dropOff => strings.dropOffsToday,
-      TodayFilter.collection => strings.collectionsDueToday,
-      TodayFilter.overdue => strings.overdue,
-      TodayFilter.ready => strings.readyForPickup,
-      TodayFilter.rush => strings.filterRush,
+IconData _filterIcon(AppointmentFilter filter) => switch (filter) {
+      AppointmentFilter.all => Icons.list_alt_outlined,
+      AppointmentFilter.dropOff => Icons.download_outlined,
+      AppointmentFilter.collection => Icons.upload_outlined,
+      AppointmentFilter.overdue => Icons.warning_amber_outlined,
+      AppointmentFilter.ready => Icons.inventory_2_outlined,
+      AppointmentFilter.rush => Icons.bolt_outlined,
     };
 
-String _sortLabel(AppStrings strings, TodaySort sort) => switch (sort) {
-      TodaySort.timeAsc => strings.sortTimeAsc,
-      TodaySort.timeDesc => strings.sortTimeDesc,
-      TodaySort.name => strings.sortName,
-      TodaySort.rushFirst => strings.sortRushFirst,
-    };
-
-IconData _filterIcon(TodayFilter filter) => switch (filter) {
-      TodayFilter.all => Icons.list_alt_outlined,
-      TodayFilter.dropOff => Icons.download_outlined,
-      TodayFilter.collection => Icons.upload_outlined,
-      TodayFilter.overdue => Icons.warning_amber_outlined,
-      TodayFilter.ready => Icons.inventory_2_outlined,
-      TodayFilter.rush => Icons.bolt_outlined,
-    };
-
-IconData _sortIcon(TodaySort sort) => switch (sort) {
-      TodaySort.timeAsc => Icons.arrow_upward,
-      TodaySort.timeDesc => Icons.arrow_downward,
-      TodaySort.name => Icons.sort_by_alpha,
-      TodaySort.rushFirst => Icons.bolt_outlined,
+IconData _sortIcon(AppointmentSort sort) => switch (sort) {
+      AppointmentSort.timeAsc => Icons.arrow_upward,
+      AppointmentSort.timeDesc => Icons.arrow_downward,
+      AppointmentSort.name => Icons.sort_by_alpha,
+      AppointmentSort.rushFirst => Icons.bolt_outlined,
     };
 
 class _Tile extends ConsumerWidget {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -7,8 +9,10 @@ import '../../data/database.dart';
 import '../../data/enums.dart';
 import '../../data/extensions.dart';
 import '../../data/job_repository.dart';
+import '../../domain/appointment_list_query.dart';
 import '../../domain/scheduling.dart';
 import '../../domain/shop_time.dart';
+import '../../l10n/app_strings.dart';
 import '../../providers/providers.dart';
 import '../job/job_detail_screen.dart';
 import '../job/job_editor_screen.dart';
@@ -350,7 +354,7 @@ class _Dot extends StatelessWidget {
       );
 }
 
-class _DayAgenda extends ConsumerWidget {
+class _DayAgenda extends ConsumerStatefulWidget {
   const _DayAgenda({
     required this.day,
     required this.entries,
@@ -362,10 +366,23 @@ class _DayAgenda extends ConsumerWidget {
   final bool blocked;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_DayAgenda> createState() => _DayAgendaState();
+}
+
+class _DayAgendaState extends ConsumerState<_DayAgenda> {
+  AppointmentFilter _filter = AppointmentFilter.all;
+  AppointmentSort _sort = AppointmentSort.timeAsc;
+
+  @override
+  Widget build(BuildContext context) {
     final strings = ref.watch(appStringsProvider);
     final language = ref.watch(languageCodeProvider);
     final formats = Formats(language);
+    final items = buildDayAppointmentItems(
+      entries: widget.entries,
+      filter: _filter,
+      sort: _sort,
+    );
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
@@ -374,47 +391,140 @@ class _DayAgenda extends ConsumerWidget {
           children: [
             Expanded(
               child: Text(
-                formats.fullDate(day),
+                formats.fullDate(widget.day),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
               ),
             ),
             IconButton(
-              tooltip: blocked ? strings.unblockDay : strings.blockDay,
+              tooltip: widget.blocked ? strings.unblockDay : strings.blockDay,
               onPressed: () => _toggleBlock(context, ref),
               icon: Icon(
-                blocked
+                widget.blocked
                     ? Icons.event_available_outlined
                     : Icons.event_busy_outlined,
               ),
             ),
           ],
         ),
-        if (entries.isEmpty)
-          EmptyState(
-            message: strings.noAppointmentsThisDay,
-            icon: Icons.event_note_outlined,
-          ),
-        for (final entry in entries)
-          AppointmentTile(
-            entry: entry,
-            languageCode: language,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => JobDetailScreen(jobId: entry.job.id),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => unawaited(_pickFilter(strings)),
+                icon: Icon(
+                  _filter == AppointmentFilter.all
+                      ? Icons.filter_list_outlined
+                      : Icons.filter_alt,
+                ),
+                label: Text(
+                  _filter == AppointmentFilter.all
+                      ? strings.filter
+                      : strings.appointmentFilterLabel(_filter),
+                ),
               ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => unawaited(_pickSort(strings)),
+                icon: const Icon(Icons.sort),
+                label: Text(
+                  _sort == AppointmentSort.timeAsc
+                      ? strings.sort
+                      : strings.appointmentSortLabel(_sort),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (items.isEmpty)
+          EmptyState(
+            message: widget.entries.isEmpty
+                ? strings.noAppointmentsThisDay
+                : strings.noMatchingAppointments,
+            icon: widget.entries.isEmpty
+                ? Icons.event_note_outlined
+                : Icons.search_off_outlined,
+          )
+        else
+          for (final entry in items)
+            AppointmentTile(
+              entry: entry,
+              languageCode: language,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => JobDetailScreen(jobId: entry.job.id),
+                ),
+              ),
+            ),
       ],
     );
+  }
+
+  Future<void> _pickFilter(AppStrings strings) async {
+    final choice = await showModalBottomSheet<AppointmentFilter>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final filter in dayAppointmentFilters)
+              ListTile(
+                leading: Icon(_dayFilterIcon(filter)),
+                title: Text(strings.appointmentFilterLabel(filter)),
+                trailing: filter == _filter
+                    ? Icon(
+                        Icons.check,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : null,
+                onTap: () => Navigator.of(context).pop(filter),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    setState(() => _filter = choice);
+  }
+
+  Future<void> _pickSort(AppStrings strings) async {
+    final choice = await showModalBottomSheet<AppointmentSort>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final sort in AppointmentSort.values)
+              ListTile(
+                leading: Icon(_daySortIcon(sort)),
+                title: Text(strings.appointmentSortLabel(sort)),
+                trailing: sort == _sort
+                    ? Icon(
+                        Icons.check,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : null,
+                onTap: () => Navigator.of(context).pop(sort),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    setState(() => _sort = choice);
   }
 
   Future<void> _toggleBlock(BuildContext context, WidgetRef ref) async {
     final db = ref.read(databaseProvider);
     final strings = ref.read(appStringsProvider);
-    final key = dayKey(day);
-    if (blocked) {
+    final key = dayKey(widget.day);
+    if (widget.blocked) {
       await db.unblockDay(key);
       return;
     }
@@ -445,3 +555,19 @@ class _DayAgenda extends ConsumerWidget {
     await db.blockDay(key, reason.isEmpty ? null : reason);
   }
 }
+
+IconData _dayFilterIcon(AppointmentFilter filter) => switch (filter) {
+      AppointmentFilter.all => Icons.list_alt_outlined,
+      AppointmentFilter.dropOff => Icons.download_outlined,
+      AppointmentFilter.collection => Icons.upload_outlined,
+      AppointmentFilter.overdue => Icons.warning_amber_outlined,
+      AppointmentFilter.ready => Icons.inventory_2_outlined,
+      AppointmentFilter.rush => Icons.bolt_outlined,
+    };
+
+IconData _daySortIcon(AppointmentSort sort) => switch (sort) {
+      AppointmentSort.timeAsc => Icons.arrow_upward,
+      AppointmentSort.timeDesc => Icons.arrow_downward,
+      AppointmentSort.name => Icons.sort_by_alpha,
+      AppointmentSort.rushFirst => Icons.bolt_outlined,
+    };

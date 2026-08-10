@@ -4,6 +4,7 @@ import 'package:anacoo_tailor/data/job_repository.dart';
 import 'package:anacoo_tailor/domain/notification_plan.dart';
 import 'package:anacoo_tailor/domain/shop_time.dart';
 import 'package:anacoo_tailor/domain/today_list.dart';
+import 'package:anacoo_tailor/l10n/app_strings.dart';
 import 'package:anacoo_tailor/services/notification_scheduler.dart';
 import 'package:anacoo_tailor/services/notification_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -55,7 +56,8 @@ void main() {
     AppointmentType type = AppointmentType.dropOff,
     bool rush = false,
   }) async {
-    final earlier = shopDateTime(at.year, at.month, at.day - 2, at.hour, at.minute);
+    final earlier =
+        shopDateTime(at.year, at.month, at.day - 2, at.hour, at.minute);
     final jobId = await repository.save(
       JobDraft(
         customerName: name,
@@ -79,6 +81,55 @@ void main() {
     );
   }
 
+  group('AppStrings list labels', () {
+    test('cover every filter and sort in all three languages', () {
+      for (final language in ['en', 'zh', 'ms']) {
+        final strings = AppStrings(language);
+        for (final filter in AppointmentFilter.values) {
+          expect(strings.appointmentFilterLabel(filter), isNotEmpty);
+        }
+        for (final sort in AppointmentSort.values) {
+          expect(strings.appointmentSortLabel(sort), isNotEmpty);
+        }
+      }
+    });
+  });
+
+  group('buildDayAppointmentItems', () {
+    test('filters and sorts a day agenda', () async {
+      final dropOff = await saveNamed(
+        name: 'Zara',
+        at: shopDateTime(2026, 8, 10, 16, 0),
+        rush: true,
+      );
+      final collection = await saveNamed(
+        name: 'Amina',
+        at: shopDateTime(2026, 8, 10, 11, 0),
+        type: AppointmentType.collection,
+      );
+
+      final dropOffs = buildDayAppointmentItems(
+        entries: [dropOff, collection],
+        filter: AppointmentFilter.dropOff,
+        sort: AppointmentSort.timeAsc,
+      );
+      final byName = buildDayAppointmentItems(
+        entries: [dropOff, collection],
+        filter: AppointmentFilter.all,
+        sort: AppointmentSort.name,
+      );
+      final rushOnly = buildDayAppointmentItems(
+        entries: [dropOff, collection],
+        filter: AppointmentFilter.rush,
+        sort: AppointmentSort.timeAsc,
+      );
+
+      expect(dropOffs.map((e) => e.customer.name), ['Zara']);
+      expect(byName.map((e) => e.customer.name), ['Amina', 'Zara']);
+      expect(rushOnly.map((e) => e.customer.name), ['Zara']);
+    });
+  });
+
   group('buildTodayItems', () {
     test('lists today appointments instead of staying empty', () async {
       final first = await saveNamed(
@@ -95,8 +146,8 @@ void main() {
         today: [first, second],
         overdue: const [],
         ready: const [],
-        filter: TodayFilter.all,
-        sort: TodaySort.timeAsc,
+        filter: AppointmentFilter.all,
+        sort: AppointmentSort.timeAsc,
       );
 
       expect(items, hasLength(2));
@@ -118,15 +169,15 @@ void main() {
         today: [dropOff, collection],
         overdue: const [],
         ready: const [],
-        filter: TodayFilter.dropOff,
-        sort: TodaySort.timeAsc,
+        filter: AppointmentFilter.dropOff,
+        sort: AppointmentSort.timeAsc,
       );
       final collections = buildTodayItems(
         today: [dropOff, collection],
         overdue: const [],
         ready: const [],
-        filter: TodayFilter.collection,
-        sort: TodaySort.timeAsc,
+        filter: AppointmentFilter.collection,
+        sort: AppointmentSort.timeAsc,
       );
 
       expect(dropOffs.map((e) => e.customerName), ['Amina']);
@@ -148,22 +199,22 @@ void main() {
         today: [lateRush, early],
         overdue: const [],
         ready: const [],
-        filter: TodayFilter.all,
-        sort: TodaySort.name,
+        filter: AppointmentFilter.all,
+        sort: AppointmentSort.name,
       );
       final rushFirst = buildTodayItems(
         today: [lateRush, early],
         overdue: const [],
         ready: const [],
-        filter: TodayFilter.all,
-        sort: TodaySort.rushFirst,
+        filter: AppointmentFilter.all,
+        sort: AppointmentSort.rushFirst,
       );
       final timeDesc = buildTodayItems(
         today: [lateRush, early],
         overdue: const [],
         ready: const [],
-        filter: TodayFilter.all,
-        sort: TodaySort.timeDesc,
+        filter: AppointmentFilter.all,
+        sort: AppointmentSort.timeDesc,
       );
 
       expect(byName.map((e) => e.customerName), ['Amina', 'Zara']);
@@ -181,8 +232,8 @@ void main() {
         today: [entry],
         overdue: [entry],
         ready: const [],
-        filter: TodayFilter.all,
-        sort: TodaySort.timeAsc,
+        filter: AppointmentFilter.all,
+        sort: AppointmentSort.timeAsc,
       );
 
       expect(items, hasLength(1));
