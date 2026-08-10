@@ -256,6 +256,8 @@ class AppStrings {
   // -------------------------------------------------------------- whatsapp
 
   String get whatsapp => _p('WhatsApp', 'WhatsApp', 'WhatsApp');
+  String get tellCustomer =>
+      _p('Tell the customer?', '通知客户？', 'Beritahu pelanggan?');
   String get whatsappConfirm => _p('Confirm', '确认', 'Sahkan');
   String get whatsappReady => _p('Ready', '可取', 'Siap');
   String get whatsappReschedule => _p('Reschedule', '改期', 'Tukar');
