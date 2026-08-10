@@ -1786,6 +1786,314 @@ class AppointmentsCompanion extends UpdateCompanion<Appointment> {
   }
 }
 
+class $JobPhotosTable extends JobPhotos
+    with TableInfo<$JobPhotosTable, JobPhoto> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $JobPhotosTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _jobIdMeta = const VerificationMeta('jobId');
+  @override
+  late final GeneratedColumn<int> jobId = GeneratedColumn<int>(
+    'job_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES jobs (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _relativePathMeta = const VerificationMeta(
+    'relativePath',
+  );
+  @override
+  late final GeneratedColumn<String> relativePath = GeneratedColumn<String>(
+    'relative_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, jobId, relativePath, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'job_photos';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<JobPhoto> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('job_id')) {
+      context.handle(
+        _jobIdMeta,
+        jobId.isAcceptableOrUnknown(data['job_id']!, _jobIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_jobIdMeta);
+    }
+    if (data.containsKey('relative_path')) {
+      context.handle(
+        _relativePathMeta,
+        relativePath.isAcceptableOrUnknown(
+          data['relative_path']!,
+          _relativePathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_relativePathMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  JobPhoto map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return JobPhoto(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      jobId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}job_id'],
+      )!,
+      relativePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}relative_path'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $JobPhotosTable createAlias(String alias) {
+    return $JobPhotosTable(attachedDatabase, alias);
+  }
+}
+
+class JobPhoto extends DataClass implements Insertable<JobPhoto> {
+  final int id;
+  final int jobId;
+
+  /// Path relative to the cloth-photos root, e.g. `42/1712345678901.jpg`.
+  final String relativePath;
+  final DateTime createdAt;
+  const JobPhoto({
+    required this.id,
+    required this.jobId,
+    required this.relativePath,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['job_id'] = Variable<int>(jobId);
+    map['relative_path'] = Variable<String>(relativePath);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  JobPhotosCompanion toCompanion(bool nullToAbsent) {
+    return JobPhotosCompanion(
+      id: Value(id),
+      jobId: Value(jobId),
+      relativePath: Value(relativePath),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory JobPhoto.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return JobPhoto(
+      id: serializer.fromJson<int>(json['id']),
+      jobId: serializer.fromJson<int>(json['jobId']),
+      relativePath: serializer.fromJson<String>(json['relativePath']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'jobId': serializer.toJson<int>(jobId),
+      'relativePath': serializer.toJson<String>(relativePath),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  JobPhoto copyWith({
+    int? id,
+    int? jobId,
+    String? relativePath,
+    DateTime? createdAt,
+  }) => JobPhoto(
+    id: id ?? this.id,
+    jobId: jobId ?? this.jobId,
+    relativePath: relativePath ?? this.relativePath,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  JobPhoto copyWithCompanion(JobPhotosCompanion data) {
+    return JobPhoto(
+      id: data.id.present ? data.id.value : this.id,
+      jobId: data.jobId.present ? data.jobId.value : this.jobId,
+      relativePath: data.relativePath.present
+          ? data.relativePath.value
+          : this.relativePath,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('JobPhoto(')
+          ..write('id: $id, ')
+          ..write('jobId: $jobId, ')
+          ..write('relativePath: $relativePath, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, jobId, relativePath, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is JobPhoto &&
+          other.id == this.id &&
+          other.jobId == this.jobId &&
+          other.relativePath == this.relativePath &&
+          other.createdAt == this.createdAt);
+}
+
+class JobPhotosCompanion extends UpdateCompanion<JobPhoto> {
+  final Value<int> id;
+  final Value<int> jobId;
+  final Value<String> relativePath;
+  final Value<DateTime> createdAt;
+  const JobPhotosCompanion({
+    this.id = const Value.absent(),
+    this.jobId = const Value.absent(),
+    this.relativePath = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  JobPhotosCompanion.insert({
+    this.id = const Value.absent(),
+    required int jobId,
+    required String relativePath,
+    required DateTime createdAt,
+  }) : jobId = Value(jobId),
+       relativePath = Value(relativePath),
+       createdAt = Value(createdAt);
+  static Insertable<JobPhoto> custom({
+    Expression<int>? id,
+    Expression<int>? jobId,
+    Expression<String>? relativePath,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (jobId != null) 'job_id': jobId,
+      if (relativePath != null) 'relative_path': relativePath,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  JobPhotosCompanion copyWith({
+    Value<int>? id,
+    Value<int>? jobId,
+    Value<String>? relativePath,
+    Value<DateTime>? createdAt,
+  }) {
+    return JobPhotosCompanion(
+      id: id ?? this.id,
+      jobId: jobId ?? this.jobId,
+      relativePath: relativePath ?? this.relativePath,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (jobId.present) {
+      map['job_id'] = Variable<int>(jobId.value);
+    }
+    if (relativePath.present) {
+      map['relative_path'] = Variable<String>(relativePath.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('JobPhotosCompanion(')
+          ..write('id: $id, ')
+          ..write('jobId: $jobId, ')
+          ..write('relativePath: $relativePath, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $BlockedDatesTable extends BlockedDates
     with TableInfo<$BlockedDatesTable, BlockedDate> {
   @override
@@ -3611,6 +3919,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CustomersTable customers = $CustomersTable(this);
   late final $JobsTable jobs = $JobsTable(this);
   late final $AppointmentsTable appointments = $AppointmentsTable(this);
+  late final $JobPhotosTable jobPhotos = $JobPhotosTable(this);
   late final $BlockedDatesTable blockedDates = $BlockedDatesTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   late final $PendingNotificationsTable pendingNotifications =
@@ -3626,6 +3935,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     customers,
     jobs,
     appointments,
+    jobPhotos,
     blockedDates,
     appSettings,
     pendingNotifications,
@@ -3646,6 +3956,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('appointments', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'jobs',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('job_photos', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -4032,6 +4349,24 @@ final class $$JobsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$JobPhotosTable, List<JobPhoto>>
+  _jobPhotosRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.jobPhotos,
+    aliasName: 'jobs__id__job_photos__job_id',
+  );
+
+  $$JobPhotosTableProcessedTableManager get jobPhotosRefs {
+    final manager = $$JobPhotosTableTableManager(
+      $_db,
+      $_db.jobPhotos,
+    ).filter((f) => f.jobId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_jobPhotosRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$JobsTableFilterComposer extends Composer<_$AppDatabase, $JobsTable> {
@@ -4148,6 +4483,31 @@ class $$JobsTableFilterComposer extends Composer<_$AppDatabase, $JobsTable> {
           }) => $$AppointmentsTableFilterComposer(
             $db: $db,
             $table: $db.appointments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> jobPhotosRefs(
+    Expression<bool> Function($$JobPhotosTableFilterComposer f) f,
+  ) {
+    final $$JobPhotosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.jobPhotos,
+      getReferencedColumn: (t) => t.jobId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$JobPhotosTableFilterComposer(
+            $db: $db,
+            $table: $db.jobPhotos,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4360,6 +4720,31 @@ class $$JobsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> jobPhotosRefs<T extends Object>(
+    Expression<T> Function($$JobPhotosTableAnnotationComposer a) f,
+  ) {
+    final $$JobPhotosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.jobPhotos,
+      getReferencedColumn: (t) => t.jobId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$JobPhotosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.jobPhotos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$JobsTableTableManager
@@ -4375,7 +4760,11 @@ class $$JobsTableTableManager
           $$JobsTableUpdateCompanionBuilder,
           (Job, $$JobsTableReferences),
           Job,
-          PrefetchHooks Function({bool customerId, bool appointmentsRefs})
+          PrefetchHooks Function({
+            bool customerId,
+            bool appointmentsRefs,
+            bool jobPhotosRefs,
+          })
         > {
   $$JobsTableTableManager(_$AppDatabase db, $JobsTable table)
     : super(
@@ -4459,11 +4848,16 @@ class $$JobsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({customerId = false, appointmentsRefs = false}) {
+              ({
+                customerId = false,
+                appointmentsRefs = false,
+                jobPhotosRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (appointmentsRefs) db.appointments,
+                    if (jobPhotosRefs) db.jobPhotos,
                   ],
                   addJoins:
                       <
@@ -4515,6 +4909,22 @@ class $$JobsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (jobPhotosRefs)
+                        await $_getPrefetchedData<Job, $JobsTable, JobPhoto>(
+                          currentTable: table,
+                          referencedTable: $$JobsTableReferences
+                              ._jobPhotosRefsTable(db),
+                          managerFromTypedResult: (p0) => $$JobsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).jobPhotosRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.jobId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -4535,7 +4945,11 @@ typedef $$JobsTableProcessedTableManager =
       $$JobsTableUpdateCompanionBuilder,
       (Job, $$JobsTableReferences),
       Job,
-      PrefetchHooks Function({bool customerId, bool appointmentsRefs})
+      PrefetchHooks Function({
+        bool customerId,
+        bool appointmentsRefs,
+        bool jobPhotosRefs,
+      })
     >;
 typedef $$AppointmentsTableCreateCompanionBuilder =
     AppointmentsCompanion Function({
@@ -4911,6 +5325,300 @@ typedef $$AppointmentsTableProcessedTableManager =
       $$AppointmentsTableUpdateCompanionBuilder,
       (Appointment, $$AppointmentsTableReferences),
       Appointment,
+      PrefetchHooks Function({bool jobId})
+    >;
+typedef $$JobPhotosTableCreateCompanionBuilder =
+    JobPhotosCompanion Function({
+      Value<int> id,
+      required int jobId,
+      required String relativePath,
+      required DateTime createdAt,
+    });
+typedef $$JobPhotosTableUpdateCompanionBuilder =
+    JobPhotosCompanion Function({
+      Value<int> id,
+      Value<int> jobId,
+      Value<String> relativePath,
+      Value<DateTime> createdAt,
+    });
+
+final class $$JobPhotosTableReferences
+    extends BaseReferences<_$AppDatabase, $JobPhotosTable, JobPhoto> {
+  $$JobPhotosTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $JobsTable _jobIdTable(_$AppDatabase db) =>
+      db.jobs.createAlias('job_photos__job_id__jobs__id');
+
+  $$JobsTableProcessedTableManager get jobId {
+    final $_column = $_itemColumn<int>('job_id')!;
+
+    final manager = $$JobsTableTableManager(
+      $_db,
+      $_db.jobs,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_jobIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$JobPhotosTableFilterComposer
+    extends Composer<_$AppDatabase, $JobPhotosTable> {
+  $$JobPhotosTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$JobsTableFilterComposer get jobId {
+    final $$JobsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.jobId,
+      referencedTable: $db.jobs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$JobsTableFilterComposer(
+            $db: $db,
+            $table: $db.jobs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$JobPhotosTableOrderingComposer
+    extends Composer<_$AppDatabase, $JobPhotosTable> {
+  $$JobPhotosTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$JobsTableOrderingComposer get jobId {
+    final $$JobsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.jobId,
+      referencedTable: $db.jobs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$JobsTableOrderingComposer(
+            $db: $db,
+            $table: $db.jobs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$JobPhotosTableAnnotationComposer
+    extends Composer<_$AppDatabase, $JobPhotosTable> {
+  $$JobPhotosTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$JobsTableAnnotationComposer get jobId {
+    final $$JobsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.jobId,
+      referencedTable: $db.jobs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$JobsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.jobs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$JobPhotosTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $JobPhotosTable,
+          JobPhoto,
+          $$JobPhotosTableFilterComposer,
+          $$JobPhotosTableOrderingComposer,
+          $$JobPhotosTableAnnotationComposer,
+          $$JobPhotosTableCreateCompanionBuilder,
+          $$JobPhotosTableUpdateCompanionBuilder,
+          (JobPhoto, $$JobPhotosTableReferences),
+          JobPhoto,
+          PrefetchHooks Function({bool jobId})
+        > {
+  $$JobPhotosTableTableManager(_$AppDatabase db, $JobPhotosTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$JobPhotosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$JobPhotosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$JobPhotosTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> jobId = const Value.absent(),
+                Value<String> relativePath = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => JobPhotosCompanion(
+                id: id,
+                jobId: jobId,
+                relativePath: relativePath,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int jobId,
+                required String relativePath,
+                required DateTime createdAt,
+              }) => JobPhotosCompanion.insert(
+                id: id,
+                jobId: jobId,
+                relativePath: relativePath,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$JobPhotosTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({jobId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (jobId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.jobId,
+                                referencedTable: $$JobPhotosTableReferences
+                                    ._jobIdTable(db),
+                                referencedColumn: $$JobPhotosTableReferences
+                                    ._jobIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$JobPhotosTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $JobPhotosTable,
+      JobPhoto,
+      $$JobPhotosTableFilterComposer,
+      $$JobPhotosTableOrderingComposer,
+      $$JobPhotosTableAnnotationComposer,
+      $$JobPhotosTableCreateCompanionBuilder,
+      $$JobPhotosTableUpdateCompanionBuilder,
+      (JobPhoto, $$JobPhotosTableReferences),
+      JobPhoto,
       PrefetchHooks Function({bool jobId})
     >;
 typedef $$BlockedDatesTableCreateCompanionBuilder =
@@ -5871,6 +6579,8 @@ class $AppDatabaseManager {
   $$JobsTableTableManager get jobs => $$JobsTableTableManager(_db, _db.jobs);
   $$AppointmentsTableTableManager get appointments =>
       $$AppointmentsTableTableManager(_db, _db.appointments);
+  $$JobPhotosTableTableManager get jobPhotos =>
+      $$JobPhotosTableTableManager(_db, _db.jobPhotos);
   $$BlockedDatesTableTableManager get blockedDates =>
       $$BlockedDatesTableTableManager(_db, _db.blockedDates);
   $$AppSettingsTableTableManager get appSettings =>

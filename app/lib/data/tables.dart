@@ -42,6 +42,20 @@ class Jobs extends Table {
   DateTimeColumn get readyAt => dateTime().nullable()();
 }
 
+/// Cloth / garment photos attached to a job (order).
+///
+/// Files live under the app documents directory; [relativePath] is the path
+/// relative to that root so the store survives app-directory moves in tests.
+class JobPhotos extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get jobId =>
+      integer().references(Jobs, #id, onDelete: KeyAction.cascade)();
+
+  /// Path relative to the cloth-photos root, e.g. `42/1712345678901.jpg`.
+  TextColumn get relativePath => text()();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
 class Appointments extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get jobId =>

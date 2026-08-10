@@ -134,6 +134,15 @@ class AppStrings {
   String get notes => _p('Notes', '备注', 'Nota');
   String get rawMessage => _p('Message', '原文', 'Mesej');
   String get status => _p('Status', '状态', 'Status');
+  String get clothPhotos => _p('Cloth photos', '布料照片', 'Foto kain');
+  String get addPhoto => _p('Add photo', '添加照片', 'Tambah foto');
+  String get takePhoto => _p('Camera', '拍照', 'Kamera');
+  String get choosePhoto => _p('Gallery', '相册', 'Galeri');
+  String get deletePhotoConfirm =>
+      _p('Delete photo?', '删除照片？', 'Padam foto?');
+  String get noClothPhotos => _p('No photos yet', '还没有照片', 'Belum ada foto');
+  String get saveJobToAddPhotos =>
+      _p('Save job to add photos', '保存后可加照片', 'Simpan untuk tambah foto');
   String get dropOff => _p('Drop-off', '送件', 'Hantar');
   String get collection => _p('Collection', '取件', 'Ambil');
   String get setLater => _p('Later', '稍后', 'Nanti');

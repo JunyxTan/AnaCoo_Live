@@ -48,10 +48,12 @@
 	</array>
 	<key>NSContactsUsageDescription</key>
 	<string>AnaCoo Tailor can fill a customer's name and number from your contacts when you add a job.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>AnaCoo Tailor saves photos of the cloth for each order.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AnaCoo Tailor saves cloth photos for each order and can export a backup file.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>AnaCoo Tailor reminds you before each drop-off and collection.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>AnaCoo Tailor can save an exported backup file.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

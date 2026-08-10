@@ -13,6 +13,7 @@ import '../../domain/workflow_automation.dart';
 import '../../l10n/app_strings.dart';
 import '../../providers/providers.dart';
 import '../widgets/common.dart';
+import '../widgets/job_photos_section.dart';
 import 'job_editor_screen.dart';
 
 class JobDetailScreen extends ConsumerWidget {
@@ -164,6 +165,7 @@ class _Body extends ConsumerWidget {
           label: strings.depositPaid,
           value: formats.money(job.depositPaid),
         ),
+        JobPhotosSection(jobId: job.id),
         SectionHeader(strings.dropOff, icon: Icons.download_outlined),
         _AppointmentCard(
           appointment: bundle.dropOff,

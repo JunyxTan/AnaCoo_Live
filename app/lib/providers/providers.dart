@@ -12,6 +12,7 @@ import '../domain/shop_time.dart';
 import '../domain/working_hours.dart';
 import '../l10n/app_strings.dart';
 import '../services/backup_service.dart';
+import '../services/cloth_photo_store.dart';
 import '../services/intake_service.dart';
 import '../services/notification_scheduler.dart';
 import '../services/notification_service.dart';
@@ -33,10 +34,15 @@ final schedulerProvider = Provider<NotificationScheduler>(
   ),
 );
 
+final clothPhotoStoreProvider = Provider<ClothPhotoStore>(
+  (ref) => ClothPhotoStore(),
+);
+
 final jobRepositoryProvider = Provider<JobRepository>(
   (ref) => JobRepository(
     db: ref.watch(databaseProvider),
     scheduler: ref.watch(schedulerProvider),
+    photos: ref.watch(clothPhotoStoreProvider),
   ),
 );
 
@@ -167,6 +173,10 @@ final allAppointmentsProvider = busySlotsProvider;
 
 final jobBundleProvider = StreamProvider.family<JobBundle?, int>(
   (ref, jobId) => ref.watch(databaseProvider).watchJobBundle(jobId),
+);
+
+final jobPhotosProvider = StreamProvider.family<List<JobPhoto>, int>(
+  (ref, jobId) => ref.watch(databaseProvider).watchJobPhotos(jobId),
 );
 
 final customersProvider =

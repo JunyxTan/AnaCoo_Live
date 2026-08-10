@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:anacoo_tailor/data/database.dart';
 import 'package:anacoo_tailor/data/enums.dart';
 import 'package:anacoo_tailor/data/job_repository.dart';
@@ -5,6 +7,7 @@ import 'package:anacoo_tailor/domain/appointment_list_query.dart';
 import 'package:anacoo_tailor/domain/notification_plan.dart';
 import 'package:anacoo_tailor/domain/shop_time.dart';
 import 'package:anacoo_tailor/l10n/app_strings.dart';
+import 'package:anacoo_tailor/services/cloth_photo_store.dart';
 import 'package:anacoo_tailor/services/notification_scheduler.dart';
 import 'package:anacoo_tailor/services/notification_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -45,6 +48,7 @@ void main() {
     repository = JobRepository(
       db: db,
       scheduler: NotificationScheduler(db: db, sink: _SilentSink()),
+      photos: ClothPhotoStore(root: Directory.systemTemp.createTempSync('photos')),
     );
   });
 

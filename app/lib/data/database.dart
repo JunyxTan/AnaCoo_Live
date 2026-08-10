@@ -50,6 +50,7 @@ class AppointmentEntry {
     Customers,
     Jobs,
     Appointments,
+    JobPhotos,
     BlockedDates,
     AppSettings,
     PendingNotifications,
@@ -63,7 +64,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -84,6 +85,9 @@ UPDATE jobs SET status = CASE status
   ELSE status
 END
 ''');
+      }
+      if (from < 3) {
+        await m.createTable(jobPhotos);
       }
     },
     beforeOpen: (details) async {
@@ -244,9 +248,31 @@ END
   }
 
   Future<void> deleteJob(int id) async {
+    await (delete(jobPhotos)..where((t) => t.jobId.equals(id))).go();
     await (delete(appointments)..where((t) => t.jobId.equals(id))).go();
     await (delete(jobs)..where((t) => t.id.equals(id))).go();
   }
+
+  // -------------------------------------------------------------- job photos
+
+  Stream<List<JobPhoto>> watchJobPhotos(int jobId) => (select(jobPhotos)
+        ..where((t) => t.jobId.equals(jobId))
+        ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+      .watch();
+
+  Future<List<JobPhoto>> photosForJob(int jobId) => (select(jobPhotos)
+        ..where((t) => t.jobId.equals(jobId))
+        ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+      .get();
+
+  Future<JobPhoto> getJobPhoto(int id) =>
+      (select(jobPhotos)..where((t) => t.id.equals(id))).getSingle();
+
+  Future<int> insertJobPhoto(JobPhotosCompanion value) =>
+      into(jobPhotos).insert(value);
+
+  Future<void> deleteJobPhoto(int id) =>
+      (delete(jobPhotos)..where((t) => t.id.equals(id))).go();
 
   // ------------------------------------------------------------ appointments
 
