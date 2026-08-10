@@ -14,9 +14,10 @@ Pipeline is four steps: **Booked → Sewing → Ready → Done**.
 - **Paste** a complete WhatsApp request (name + phone + date + time) and the
   job is saved immediately — no editor, no detail screen. Incomplete requests
   still open a short form.
-- Every new job gets a **collection date** from the turnaround setting.
-- Today tiles have a **Next** button that advances the job one step. Ready
-  auto-schedules collection if it was missing; Done closes both appointments.
+- Collection is optional: add it later from the job editor (Suggested uses the
+  turnaround setting). It is never created automatically.
+- Today tiles have a **Next** button that advances the job one step. Done closes
+  any open appointments.
 - WhatsApp **Ready** jumps the job to Ready; Confirm only messages the customer.
 
 Launcher icons are generated from `assets/branding/app_icon.png` (AnaCoo mark
@@ -24,9 +25,9 @@ on black). Regenerate with `dart run flutter_launcher_icons`.
 
 ## The shape of the problem
 
-Every job has **two** appointments — a drop-off and a collection. Collection is
-scheduled up front from turnaround defaults (and can still be edited). The app
-warns about clashes and closed days, and reminds ahead of each appointment.
+Every job has a drop-off appointment, and may also have a collection. Collection
+is optional and set by the tailor when needed. The app warns about clashes and
+closed days, and reminds ahead of each appointment.
 
 ## Stack
 
