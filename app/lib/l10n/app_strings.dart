@@ -64,6 +64,17 @@ class AppStrings {
   String get readyForPickup => _p('Ready', '待取', 'Siap');
   String get nothingToday => _p('Nothing today', '今天没有', 'Tiada hari ini');
   String get quietDay => _p('Nothing today', '今天没有', 'Tiada hari ini');
+  String get noMatchingAppointments =>
+      _p('No matches', '没有匹配', 'Tiada padanan');
+
+  String get filter => _p('Filter', '筛选', 'Tapis');
+  String get sort => _p('Sort', '排序', 'Isih');
+  String get filterAll => _p('All', '全部', 'Semua');
+  String get filterRush => _p('Rush', '加急', 'Segera');
+  String get sortTimeAsc => _p('Time ↑', '时间 ↑', 'Masa ↑');
+  String get sortTimeDesc => _p('Time ↓', '时间 ↓', 'Masa ↓');
+  String get sortName => _p('Name', '姓名', 'Nama');
+  String get sortRushFirst => _p('Rush first', '加急优先', 'Segera dulu');
 
   String get importDetectedTitle => _p('Import?', '导入？', 'Import?');
   String get importDetectedBody => _p(
