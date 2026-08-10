@@ -62,10 +62,24 @@ class WhatsAppLauncher {
     return Uri.parse('https://wa.me/$digits?text=${Uri.encodeComponent(message)}');
   }
 
+  /// Builds a `tel:` link from the same normalisation WhatsApp links use.
+  static Uri? buildCallLink(String? phone) {
+    final digits = normalisePhone(phone);
+    if (digits == null) return null;
+    return Uri(scheme: 'tel', path: '+$digits');
+  }
+
   /// Opens WhatsApp. Returns false when there is no number or nothing on the
   /// device can handle the link.
   Future<bool> send({required String? phone, required String message}) async {
     final uri = buildLink(phone: phone, message: message);
+    if (uri == null) return false;
+    return launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  /// Opens the dialer with [phone] filled in.
+  Future<bool> call(String? phone) async {
+    final uri = buildCallLink(phone);
     if (uri == null) return false;
     return launchUrl(uri, mode: LaunchMode.externalApplication);
   }

@@ -10,6 +10,8 @@ import '../../l10n/app_strings.dart';
 import '../../providers/providers.dart';
 import 'common.dart';
 
+const double _tileSize = 96;
+
 /// Cloth / garment photo strip for a saved job.
 class JobPhotosSection extends ConsumerWidget {
   const JobPhotosSection({super.key, required this.jobId});
@@ -21,44 +23,54 @@ class JobPhotosSection extends ConsumerWidget {
     final strings = ref.watch(appStringsProvider);
     final photos = ref.watch(jobPhotosProvider(jobId)).value ?? const <JobPhoto>[];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SectionHeader(
-          strings.clothPhotos,
-          count: photos.isEmpty ? null : photos.length,
-          icon: Icons.photo_library_outlined,
-          trailing: IconButton(
-            tooltip: strings.addPhoto,
-            onPressed: () => unawaited(_addPhoto(context, ref, strings)),
-            icon: const Icon(Icons.add_a_photo_outlined),
-          ),
-        ),
-        if (photos.isEmpty)
-          EmptyState(
-            message: strings.noClothPhotos,
-            icon: Icons.checkroom_outlined,
-          )
-        else
-          SizedBox(
-            height: 112,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: photos.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 10),
-              itemBuilder: (context, index) {
-                final photo = photos[index];
-                return _PhotoThumb(
-                  photo: photo,
-                  deleteTooltip: strings.delete,
-                  onOpen: () => unawaited(_openPhoto(context, ref, photo)),
-                  onDelete: () =>
-                      unawaited(_deletePhoto(context, ref, strings, photo)),
-                );
-              },
+    return SectionCard(
+      title: strings.clothPhotos,
+      icon: Icons.photo_library_outlined,
+      count: photos.isEmpty ? null : photos.length,
+      child: photos.isEmpty
+          ? Row(
+              children: [
+                _AddPhotoTile(
+                  label: strings.addPhoto,
+                  onTap: () => unawaited(_addPhoto(context, ref, strings)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    strings.noClothPhotos,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ),
+              ],
+            )
+          : SizedBox(
+              height: _tileSize,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                // The add tile leads the strip, so another photo is always one
+                // tap away without hunting for a header button.
+                itemCount: photos.length + 1,
+                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return _AddPhotoTile(
+                      label: strings.addPhoto,
+                      onTap: () => unawaited(_addPhoto(context, ref, strings)),
+                    );
+                  }
+                  final photo = photos[index - 1];
+                  return _PhotoThumb(
+                    photo: photo,
+                    deleteTooltip: strings.delete,
+                    onOpen: () => unawaited(_openPhoto(context, ref, photo)),
+                    onDelete: () =>
+                        unawaited(_deletePhoto(context, ref, strings, photo)),
+                  );
+                },
+              ),
             ),
-          ),
-      ],
     );
   }
 
@@ -150,6 +162,54 @@ class JobPhotosSection extends ConsumerWidget {
   }
 }
 
+class _AddPhotoTile extends StatelessWidget {
+  const _AddPhotoTile({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          width: _tileSize,
+          height: _tileSize,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.add_a_photo_outlined,
+                size: 24,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _PhotoThumb extends ConsumerWidget {
   const _PhotoThumb({
     required this.photo,
@@ -179,8 +239,8 @@ class _PhotoThumb extends ConsumerWidget {
               child: InkWell(
                 onTap: file == null ? null : onOpen,
                 child: SizedBox(
-                  width: 112,
-                  height: 112,
+                  width: _tileSize,
+                  height: _tileSize,
                   child: file == null
                       ? const Center(child: CircularProgressIndicator())
                       : Image.file(file, fit: BoxFit.cover),

@@ -125,11 +125,15 @@ class AppStrings {
   String get name => _p('Name', '姓名', 'Nama');
   String get phone => _p('Phone', '电话', 'Telefon');
   String get whatsappNumber => _p('WhatsApp', 'WhatsApp', 'WhatsApp');
+  String get call => _p('Call', '拨打', 'Panggil');
+  String get couldNotCall =>
+      _p("Couldn't call", '无法拨打', 'Tidak dapat panggil');
   String get service => _p('Service', '服务', 'Perkhidmatan');
   String get itemDescription => _p('Item', '物品', 'Barang');
   String get quantity => _p('Qty', '数量', 'Kuantiti');
   String get quotedPrice => _p('Price', '报价', 'Harga');
   String get depositPaid => _p('Deposit', '订金', 'Deposit');
+  String get balanceDue => _p('Balance', '余额', 'Baki');
   String get rushJob => _p('Rush', '加急', 'Segera');
   String get notes => _p('Notes', '备注', 'Nota');
   String get rawMessage => _p('Message', '原文', 'Mesej');
@@ -147,6 +151,7 @@ class AppStrings {
   String get collection => _p('Collection', '取件', 'Ambil');
   String get setLater => _p('Later', '稍后', 'Nanti');
   String get collectionNotSet => _p('No collection', '未安排取件', 'Tiada pengambilan');
+  String get notScheduled => _p('Not set', '未安排', 'Belum ditetapkan');
   String get addCollection => _p('Add', '安排', 'Tambah');
   String get scheduleCollectionTitle => _p('Collect?', '取件？', 'Ambil?');
   String scheduleCollectionBody(String when) => when;
@@ -250,6 +255,7 @@ class AppStrings {
 
   // -------------------------------------------------------------- whatsapp
 
+  String get whatsapp => _p('WhatsApp', 'WhatsApp', 'WhatsApp');
   String get whatsappConfirm => _p('Confirm', '确认', 'Sahkan');
   String get whatsappReady => _p('Ready', '可取', 'Siap');
   String get whatsappReschedule => _p('Reschedule', '改期', 'Tukar');
