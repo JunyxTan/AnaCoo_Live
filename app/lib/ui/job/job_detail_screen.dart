@@ -530,6 +530,13 @@ class _AppointmentCard extends ConsumerWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
+              TintedPill(
+                label: appointmentStatusLabel(a.status, language),
+                icon: appointmentStatusIcon(a.status),
+                color: statusColor,
+                onTap: () => unawaited(_pickStatus(context, ref, a.status)),
+              ),
             ],
           ),
           if (isLate) ...[
@@ -552,16 +559,6 @@ class _AppointmentCard extends ConsumerWidget {
               ],
             ),
           ],
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TintedPill(
-              label: appointmentStatusLabel(a.status, language),
-              icon: appointmentStatusIcon(a.status),
-              color: statusColor,
-              onTap: () => unawaited(_pickStatus(context, ref, a.status)),
-            ),
-          ),
         ],
       ),
     );

@@ -601,12 +601,14 @@ class _Connector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (travelled == null) return const SizedBox.shrink();
-    final theme = Theme.of(context);
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       height: 2,
       color: travelled!
-          ? theme.colorScheme.primaryContainer
-          : theme.colorScheme.outlineVariant,
+          ? scheme.primary
+          // The outline colours are too close to the card in the dark theme to
+          // read as a track, so the untravelled leg is a faded foreground.
+          : scheme.onSurfaceVariant.withValues(alpha: 0.3),
     );
   }
 }
