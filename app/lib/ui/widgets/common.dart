@@ -454,11 +454,16 @@ class StatusStepper extends StatelessWidget {
     required this.status,
     required this.languageCode,
     required this.onChanged,
+    this.dates = const {},
   });
 
   final JobStatus status;
   final String languageCode;
   final ValueChanged<JobStatus> onChanged;
+
+  /// Preformatted date to print above a step, for the steps that have one.
+  /// The row of them reads left to right as the job's timeline.
+  final Map<JobStatus, String> dates;
 
   static IconData iconFor(JobStatus status) => switch (status) {
         JobStatus.booked => Icons.event_available_outlined,
@@ -502,6 +507,7 @@ class StatusStepper extends StatelessWidget {
             child: _Step(
               icon: iconFor(JobStatus.pipeline[i]),
               label: jobStatusLabel(JobStatus.pipeline[i], languageCode),
+              date: dates[JobStatus.pipeline[i]],
               reached: i <= status.step,
               current: i == status.step,
               lineBefore: i == 0 ? null : i <= status.step,
@@ -519,6 +525,7 @@ class _Step extends StatelessWidget {
   const _Step({
     required this.icon,
     required this.label,
+    required this.date,
     required this.reached,
     required this.current,
     required this.lineBefore,
@@ -528,6 +535,7 @@ class _Step extends StatelessWidget {
 
   final IconData icon;
   final String label;
+  final String? date;
   final bool reached;
   final bool current;
 
@@ -558,6 +566,24 @@ class _Step extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Column(
           children: [
+            // Kept at a fixed height whether or not this step has a date, so
+            // the circles stay on one line.
+            SizedBox(
+              height: 16,
+              child: Text(
+                date ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: current
+                      ? theme.colorScheme.onSurface
+                      : theme.colorScheme.onSurfaceVariant,
+                  fontWeight: current ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
             Row(
               children: [
                 Expanded(child: _Connector(travelled: lineBefore)),

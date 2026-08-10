@@ -277,6 +277,7 @@ class _StatusCard extends ConsumerWidget {
           StatusStepper(
             status: job.status,
             languageCode: language,
+            dates: pipelineDates(bundle, Formats(language)),
             onChanged: (status) => unawaited(
               applyJobStatusChange(context, ref, bundle: bundle, status: status),
             ),
@@ -296,6 +297,29 @@ class _StatusCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// The date to print above each pipeline step.
+///
+/// The pairings follow what `setStatus` already does with a job: moving it to
+/// sewing marks the drop-off done, and finishing it marks the collection done.
+/// So the drop-off dates the sewing step and the collection dates the last one,
+/// which leaves the row reading left to right as the job's timeline: taken in,
+/// garment arrives, marked ready, collected.
+///
+/// Steps with nothing recorded are left blank — the shop keeps no timestamp for
+/// the start of sewing, and `readyAt` is cleared once a job leaves ready.
+Map<JobStatus, String> pipelineDates(JobBundle bundle, Formats formats) {
+  final job = bundle.job;
+  final readyAt = job.readyAt;
+  return {
+    JobStatus.booked: formats.dayMonth(toShop(job.createdAt)),
+    if (bundle.dropOff != null)
+      JobStatus.sewing: formats.dayMonth(bundle.dropOff!.at),
+    if (readyAt != null) JobStatus.ready: formats.dayMonth(toShop(readyAt)),
+    if (bundle.collection != null)
+      JobStatus.done: formats.dayMonth(bundle.collection!.at),
+  };
 }
 
 /// The service, the garment, and the money — the figures as tiles so they can
