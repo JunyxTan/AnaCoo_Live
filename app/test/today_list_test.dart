@@ -1,9 +1,9 @@
 import 'package:anacoo_tailor/data/database.dart';
 import 'package:anacoo_tailor/data/enums.dart';
 import 'package:anacoo_tailor/data/job_repository.dart';
+import 'package:anacoo_tailor/domain/appointment_list_query.dart';
 import 'package:anacoo_tailor/domain/notification_plan.dart';
 import 'package:anacoo_tailor/domain/shop_time.dart';
-import 'package:anacoo_tailor/domain/today_list.dart';
 import 'package:anacoo_tailor/l10n/app_strings.dart';
 import 'package:anacoo_tailor/services/notification_scheduler.dart';
 import 'package:anacoo_tailor/services/notification_service.dart';
@@ -91,7 +91,111 @@ void main() {
         for (final sort in AppointmentSort.values) {
           expect(strings.appointmentSortLabel(sort), isNotEmpty);
         }
+        expect(strings.tabAppointments, isNotEmpty);
+        expect(strings.appointments, isNotEmpty);
+        expect(strings.noAppointments, isNotEmpty);
       }
+    });
+  });
+
+  group('buildAppointmentItems all-time list', () {
+    test('lists appointments across different days', () async {
+      final past = await saveNamed(
+        name: 'Amina',
+        at: shopDateTime(2026, 8, 1, 11, 0),
+      );
+      final future = await saveNamed(
+        name: 'Budi',
+        at: shopDateTime(2026, 8, 20, 14, 0),
+        type: AppointmentType.collection,
+      );
+
+      final items = buildAppointmentItems(
+        entries: [past, future],
+        filter: AppointmentFilter.all,
+        sort: AppointmentSort.timeAsc,
+      );
+
+      expect(items.map((e) => e.customer.name), ['Amina', 'Budi']);
+    });
+
+    test('filters by type, rush, and overdue', () async {
+      final pastRush = await saveNamed(
+        name: 'Zara',
+        at: shopDateTime(2026, 7, 1, 11, 0),
+        rush: true,
+      );
+      final upcoming = await saveNamed(
+        name: 'Amina',
+        at: shopDateTime(2026, 12, 1, 11, 0),
+        type: AppointmentType.collection,
+      );
+      final nowUtc = shopDateTime(2026, 8, 10, 12, 0).toUtc();
+
+      expect(
+        buildAppointmentItems(
+          entries: [pastRush, upcoming],
+          filter: AppointmentFilter.dropOff,
+          sort: AppointmentSort.timeAsc,
+          nowUtc: nowUtc,
+        ).map((e) => e.customer.name),
+        ['Zara'],
+      );
+      expect(
+        buildAppointmentItems(
+          entries: [pastRush, upcoming],
+          filter: AppointmentFilter.rush,
+          sort: AppointmentSort.timeAsc,
+          nowUtc: nowUtc,
+        ).map((e) => e.customer.name),
+        ['Zara'],
+      );
+      expect(
+        buildAppointmentItems(
+          entries: [pastRush, upcoming],
+          filter: AppointmentFilter.overdue,
+          sort: AppointmentSort.timeAsc,
+          nowUtc: nowUtc,
+        ).map((e) => e.customer.name),
+        ['Zara'],
+      );
+    });
+
+    test('sorts by name and time', () async {
+      final late = await saveNamed(
+        name: 'Zara',
+        at: shopDateTime(2026, 8, 20, 16, 0),
+        rush: true,
+      );
+      final early = await saveNamed(
+        name: 'Amina',
+        at: shopDateTime(2026, 8, 1, 11, 0),
+      );
+
+      expect(
+        buildAppointmentItems(
+          entries: [late, early],
+          filter: AppointmentFilter.all,
+          sort: AppointmentSort.name,
+        ).map((e) => e.customer.name),
+        ['Amina', 'Zara'],
+      );
+      expect(
+        buildAppointmentItems(
+          entries: [late, early],
+          filter: AppointmentFilter.all,
+          sort: AppointmentSort.timeDesc,
+        ).map((e) => e.customer.name),
+        ['Zara', 'Amina'],
+      );
+      expect(
+        buildAppointmentItems(
+          entries: [late, early],
+          filter: AppointmentFilter.all,
+          sort: AppointmentSort.rushFirst,
+        ).map((e) => e.customer.name),
+        ['Zara', 'Amina'],
+      );
     });
   });
 
@@ -118,126 +222,9 @@ void main() {
         filter: AppointmentFilter.all,
         sort: AppointmentSort.name,
       );
-      final rushOnly = buildDayAppointmentItems(
-        entries: [dropOff, collection],
-        filter: AppointmentFilter.rush,
-        sort: AppointmentSort.timeAsc,
-      );
 
       expect(dropOffs.map((e) => e.customer.name), ['Zara']);
       expect(byName.map((e) => e.customer.name), ['Amina', 'Zara']);
-      expect(rushOnly.map((e) => e.customer.name), ['Zara']);
-    });
-  });
-
-  group('buildTodayItems', () {
-    test('lists today appointments instead of staying empty', () async {
-      final first = await saveNamed(
-        name: 'Amina',
-        at: shopDateTime(2026, 8, 10, 11, 0),
-      );
-      final second = await saveNamed(
-        name: 'Budi',
-        at: shopDateTime(2026, 8, 10, 14, 0),
-        type: AppointmentType.collection,
-      );
-
-      final items = buildTodayItems(
-        today: [first, second],
-        overdue: const [],
-        ready: const [],
-        filter: AppointmentFilter.all,
-        sort: AppointmentSort.timeAsc,
-      );
-
-      expect(items, hasLength(2));
-      expect(items.map((e) => e.customerName), ['Amina', 'Budi']);
-    });
-
-    test('filters by appointment type', () async {
-      final dropOff = await saveNamed(
-        name: 'Amina',
-        at: shopDateTime(2026, 8, 10, 11, 0),
-      );
-      final collection = await saveNamed(
-        name: 'Budi',
-        at: shopDateTime(2026, 8, 10, 14, 0),
-        type: AppointmentType.collection,
-      );
-
-      final dropOffs = buildTodayItems(
-        today: [dropOff, collection],
-        overdue: const [],
-        ready: const [],
-        filter: AppointmentFilter.dropOff,
-        sort: AppointmentSort.timeAsc,
-      );
-      final collections = buildTodayItems(
-        today: [dropOff, collection],
-        overdue: const [],
-        ready: const [],
-        filter: AppointmentFilter.collection,
-        sort: AppointmentSort.timeAsc,
-      );
-
-      expect(dropOffs.map((e) => e.customerName), ['Amina']);
-      expect(collections.map((e) => e.customerName), ['Budi']);
-    });
-
-    test('sorts by name and rush-first', () async {
-      final lateRush = await saveNamed(
-        name: 'Zara',
-        at: shopDateTime(2026, 8, 10, 16, 0),
-        rush: true,
-      );
-      final early = await saveNamed(
-        name: 'Amina',
-        at: shopDateTime(2026, 8, 10, 11, 0),
-      );
-
-      final byName = buildTodayItems(
-        today: [lateRush, early],
-        overdue: const [],
-        ready: const [],
-        filter: AppointmentFilter.all,
-        sort: AppointmentSort.name,
-      );
-      final rushFirst = buildTodayItems(
-        today: [lateRush, early],
-        overdue: const [],
-        ready: const [],
-        filter: AppointmentFilter.all,
-        sort: AppointmentSort.rushFirst,
-      );
-      final timeDesc = buildTodayItems(
-        today: [lateRush, early],
-        overdue: const [],
-        ready: const [],
-        filter: AppointmentFilter.all,
-        sort: AppointmentSort.timeDesc,
-      );
-
-      expect(byName.map((e) => e.customerName), ['Amina', 'Zara']);
-      expect(rushFirst.map((e) => e.customerName), ['Zara', 'Amina']);
-      expect(timeDesc.map((e) => e.customerName), ['Zara', 'Amina']);
-    });
-
-    test('dedupes overdue entries that also appear in today', () async {
-      final entry = await saveNamed(
-        name: 'Late',
-        at: shopDateTime(2026, 8, 10, 9, 0),
-      );
-
-      final items = buildTodayItems(
-        today: [entry],
-        overdue: [entry],
-        ready: const [],
-        filter: AppointmentFilter.all,
-        sort: AppointmentSort.timeAsc,
-      );
-
-      expect(items, hasLength(1));
-      expect((items.single as TodayAppointmentItem).isOverdue, isTrue);
     });
   });
 }

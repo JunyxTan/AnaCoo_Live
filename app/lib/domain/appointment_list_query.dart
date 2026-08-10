@@ -4,14 +4,21 @@ import 'list_query.dart';
 
 export 'list_query.dart';
 
-/// Whether [entry] belongs in an agenda under [filter].
+/// Live appointment whose scheduled time is already past.
+bool isAppointmentOverdue(AppointmentEntry entry, DateTime nowUtc) {
+  if (!entry.appointment.status.isLive) return false;
+  if (entry.job.status.isClosed) return false;
+  return entry.appointment.scheduledAt.isBefore(nowUtc);
+}
+
+/// Whether [entry] belongs under [filter].
 ///
-/// [isOverdue] is only meaningful for Today’s overdue feed; day agendas pass
-/// `false`.
+/// Pass [nowUtc] so overdue/ready can be decided from the row itself (all-time
+/// list). Day agendas can omit it when those filters are not offered.
 bool appointmentMatchesFilter(
   AppointmentEntry entry,
   AppointmentFilter filter, {
-  bool isOverdue = false,
+  DateTime? nowUtc,
 }) {
   return switch (filter) {
     AppointmentFilter.all => true,
@@ -19,8 +26,9 @@ bool appointmentMatchesFilter(
       entry.appointment.type == AppointmentType.dropOff,
     AppointmentFilter.collection =>
       entry.appointment.type == AppointmentType.collection,
-    AppointmentFilter.overdue => isOverdue,
-    AppointmentFilter.ready => false,
+    AppointmentFilter.overdue =>
+      nowUtc != null && isAppointmentOverdue(entry, nowUtc),
+    AppointmentFilter.ready => entry.job.status == JobStatus.ready,
     AppointmentFilter.rush => entry.job.isRush,
   };
 }
@@ -45,20 +53,35 @@ int compareAppointmentEntries(
   );
 }
 
-/// Filters + sorts a single day’s appointments (Calendar agenda).
-List<AppointmentEntry> buildDayAppointmentItems({
+/// Filters + sorts any appointment list (all-time home or a calendar day).
+List<AppointmentEntry> buildAppointmentItems({
   required List<AppointmentEntry> entries,
   required AppointmentFilter filter,
   required AppointmentSort sort,
+  DateTime? nowUtc,
 }) {
   final filtered = entries
-      .where((entry) => appointmentMatchesFilter(entry, filter))
+      .where(
+        (entry) => appointmentMatchesFilter(entry, filter, nowUtc: nowUtc),
+      )
       .toList();
   filtered.sort((a, b) => compareAppointmentEntries(a, b, sort));
   return filtered;
 }
 
-/// Shared comparison used by Today rows and day agendas.
+/// Calendar day agenda — same builder, without overdue/ready time context.
+List<AppointmentEntry> buildDayAppointmentItems({
+  required List<AppointmentEntry> entries,
+  required AppointmentFilter filter,
+  required AppointmentSort sort,
+}) =>
+    buildAppointmentItems(
+      entries: entries,
+      filter: filter,
+      sort: sort,
+    );
+
+/// Shared comparison used by appointment rows.
 int compareListKeys({
   required AppointmentSort sort,
   required String aName,

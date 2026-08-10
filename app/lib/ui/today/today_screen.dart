@@ -5,17 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/formatting.dart';
 import '../../data/database.dart';
-import '../../data/extensions.dart';
-import '../../domain/service_labels.dart';
+import '../../domain/appointment_list_query.dart';
 import '../../domain/shop_time.dart';
-import '../../domain/today_list.dart';
 import '../../domain/workflow_automation.dart';
 import '../../l10n/app_strings.dart';
 import '../../providers/providers.dart';
 import '../job/job_detail_screen.dart';
 import '../widgets/common.dart';
 
-/// Home: today's appointments as one filterable, sortable list.
+/// Home: every appointment across all time, with filter + sort.
 class TodayScreen extends ConsumerStatefulWidget {
   const TodayScreen({
     super.key,
@@ -40,18 +38,15 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     final language = ref.watch(languageCodeProvider);
     final formats = Formats(language);
 
-    final today = ref.watch(todayAppointmentsProvider).value ?? const [];
-    final overdue = ref.watch(overdueAppointmentsProvider).value ?? const [];
-    final ready = ref.watch(readyJobsProvider).value ?? const [];
-
-    final items = buildTodayItems(
-      today: today,
-      overdue: overdue,
-      ready: ready,
+    final appointments =
+        ref.watch(allAppointmentsProvider).value ?? const <AppointmentEntry>[];
+    final nowUtc = DateTime.now().toUtc();
+    final items = buildAppointmentItems(
+      entries: appointments,
       filter: _filter,
       sort: _sort,
+      nowUtc: nowUtc,
     );
-    final hasAny = today.isNotEmpty || overdue.isNotEmpty || ready.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -128,31 +123,25 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
           ),
           if (items.isEmpty)
             EmptyState(
-              message: hasAny
-                  ? strings.noMatchingAppointments
-                  : strings.nothingToday,
-              icon: hasAny
-                  ? Icons.search_off_outlined
-                  : Icons.wb_sunny_outlined,
+              message: appointments.isEmpty
+                  ? strings.noAppointments
+                  : strings.noMatchingAppointments,
+              icon: appointments.isEmpty
+                  ? Icons.event_note_outlined
+                  : Icons.search_off_outlined,
             )
           else ...[
             SectionHeader(
-              strings.tabToday,
+              strings.appointments,
               count: items.length,
-              icon: Icons.wb_sunny_outlined,
+              icon: Icons.event_note_outlined,
             ),
-            for (final item in items)
-              switch (item) {
-                TodayAppointmentItem(:final entry, :final isOverdue) => _Tile(
-                    entry: entry,
-                    language: language,
-                    showDate: isOverdue,
-                  ),
-                TodayReadyItem(:final bundle) => _ReadyTile(
-                    bundle: bundle,
-                    language: language,
-                  ),
-              },
+            for (final entry in items)
+              _Tile(
+                entry: entry,
+                language: language,
+                showDate: true,
+              ),
           ],
         ],
       ),
@@ -167,7 +156,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            for (final filter in todayAppointmentFilters)
+            for (final filter in allAppointmentFilters)
               ListTile(
                 leading: Icon(_filterIcon(filter)),
                 title: Text(strings.appointmentFilterLabel(filter)),
@@ -258,81 +247,6 @@ class _Tile extends ConsumerWidget {
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => JobDetailScreen(jobId: entry.job.id),
-        ),
-      ),
-    );
-  }
-}
-
-class _ReadyTile extends ConsumerWidget {
-  const _ReadyTile({required this.bundle, required this.language});
-
-  final JobBundle bundle;
-  final String language;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final strings = ref.watch(appStringsProvider);
-    final formats = Formats(language);
-    final readyAt = bundle.job.readyAt;
-    final waitingDays = readyAt == null
-        ? 0
-        : startOfDay(shopNow()).difference(startOfDay(toShop(readyAt))).inDays;
-    final next = nextStatusFor(bundle.job.status);
-
-    return ListTile(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      leading:
-          const CircleAvatar(child: Icon(Icons.inventory_2_outlined, size: 20)),
-      title: Text(
-        bundle.customer.name,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text(
-        serviceLabel(
-          bundle.job.service,
-          language,
-          freeText: bundle.job.serviceFreeText,
-        ),
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (waitingDays > 0)
-                Text(
-                  strings.days(waitingDays),
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-              if (bundle.collection != null)
-                Text(
-                  formats.dayMonth(bundle.collection!.at),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-            ],
-          ),
-          if (next != null) ...[
-            const SizedBox(width: 8),
-            FilledButton(
-              onPressed: () => unawaited(_advance(context, ref, bundle.job.id)),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(56, 36),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                visualDensity: VisualDensity.compact,
-              ),
-              child: Text(strings.nextAction),
-            ),
-          ],
-        ],
-      ),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => JobDetailScreen(jobId: bundle.job.id),
         ),
       ),
     );

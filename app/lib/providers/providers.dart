@@ -160,6 +160,9 @@ final busySlotsProvider = StreamProvider<List<AppointmentEntry>>(
   (ref) => ref.watch(databaseProvider).watchAllAppointmentEntries(),
 );
 
+/// Every appointment across all time — the home list data source.
+final allAppointmentsProvider = busySlotsProvider;
+
 // ------------------------------------------------------------------ job view
 
 final jobBundleProvider = StreamProvider.family<JobBundle?, int>(

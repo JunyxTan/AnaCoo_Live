@@ -34,6 +34,7 @@ class AppStrings {
 
   String get appTitle => _p('AnaCoo Tailor', 'AnaCoo 裁缝', 'AnaCoo Tailor');
   String get tabToday => _p('Today', '今天', 'Hari ini');
+  String get tabAppointments => _p('Appointments', '预约', 'Temujanji');
   String get tabCalendar => _p('Calendar', '日历', 'Kalendar');
   String get tabCustomers => _p('Customers', '客户', 'Pelanggan');
   String get tabSettings => _p('Settings', '设置', 'Tetapan');
@@ -66,8 +67,10 @@ class AppStrings {
   String get readyForPickup => _p('Ready', '待取', 'Siap');
   String get nothingToday => _p('Nothing today', '今天没有', 'Tiada hari ini');
   String get quietDay => _p('Nothing today', '今天没有', 'Tiada hari ini');
+  String get noAppointments => _p('No appointments', '没有预约', 'Tiada temujanji');
   String get noMatchingAppointments =>
       _p('No matches', '没有匹配', 'Tiada padanan');
+  String get appointments => _p('Appointments', '预约', 'Temujanji');
 
   // ---------------------------------------------------- list filter / sort
 
