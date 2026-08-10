@@ -133,12 +133,7 @@ class _Body extends ConsumerWidget {
             width: double.infinity,
             child: FilledButton.icon(
               onPressed: () => unawaited(
-                ref.read(jobRepositoryProvider).advance(
-                      job.id,
-                      hours: ref.read(workingHoursProvider),
-                      turnaroundDays: ref.read(turnaroundDaysProvider),
-                      slotMinutes: ref.read(slotMinutesProvider),
-                    ),
+                ref.read(jobRepositoryProvider).advance(job.id),
               ),
               icon: const Icon(Icons.arrow_forward),
               label: Text(
@@ -382,7 +377,7 @@ class _WhatsAppActions extends ConsumerWidget {
   }
 }
 
-/// Applies a stepper change. Landing on Ready auto-schedules collection.
+/// Applies a stepper change.
 Future<void> applyJobStatusChange(
   BuildContext context,
   WidgetRef ref, {
@@ -390,14 +385,6 @@ Future<void> applyJobStatusChange(
   required JobStatus status,
 }) async {
   final repo = ref.read(jobRepositoryProvider);
-  if (status == JobStatus.ready) {
-    await repo.ensureCollection(
-      bundle.job.id,
-      hours: ref.read(workingHoursProvider),
-      turnaroundDays: ref.read(turnaroundDaysProvider),
-      slotMinutes: ref.read(slotMinutesProvider),
-    );
-  }
   await repo.setStatus(bundle.job.id, status);
 }
 
@@ -412,14 +399,6 @@ Future<void> syncAfterWhatsAppAction(
   final next = statusAfterWhatsAppAction(bundle.job.status, kind);
   if (kind == TemplateKind.confirm) {
     await repo.confirmDropOffIfPending(bundle.job.id);
-  }
-  if (next == JobStatus.ready) {
-    await repo.ensureCollection(
-      bundle.job.id,
-      hours: ref.read(workingHoursProvider),
-      turnaroundDays: ref.read(turnaroundDaysProvider),
-      slotMinutes: ref.read(slotMinutesProvider),
-    );
   }
   if (next != null) {
     await repo.setStatus(bundle.job.id, next);
