@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:anacoo_tailor/core/formatting.dart';
 import 'package:anacoo_tailor/core/theme.dart';
 import 'package:anacoo_tailor/data/database.dart';
 import 'package:anacoo_tailor/data/enums.dart';
@@ -135,6 +136,13 @@ void main() {
     }
     expect(find.text('Next · Sewing'), findsOneWidget);
 
+    // The steps carry their dates: booked today, sewing when the garment
+    // arrives, done when it is collected.
+    const formats = Formats('en');
+    expect(find.text(formats.dayMonth(shopNow())), findsOneWidget);
+    expect(find.text(formats.dayMonth(shopDateTime(2026, 8, 13))), findsOneWidget);
+    expect(find.text(formats.dayMonth(shopDateTime(2026, 8, 16))), findsOneWidget);
+
     expect(find.text('Pants / jeans shortening'), findsOneWidget);
     expect(find.text('Blue jeans'), findsOneWidget);
     expect(find.text('RM 45'), findsOneWidget);
@@ -214,6 +222,19 @@ void main() {
     expect(dropOff!.status, AppointmentStatus.confirmed);
     final collection = await db.appointmentOf(jobId, AppointmentType.collection);
     expect(collection!.status, AppointmentStatus.pending);
+    await unmount(tester);
+  });
+
+  testWidgets('a job sitting in ready is dated from when it got there',
+      (tester) async {
+    final jobId = await seedJob(status: JobStatus.ready);
+    await pumpDetail(tester, jobId);
+
+    const formats = Formats('en');
+    final job = await db.getJob(jobId);
+    expect(job.readyAt, isNotNull);
+    // Booked and ready both land on today, so the date shows up twice.
+    expect(find.text(formats.dayMonth(shopNow())), findsNWidgets(2));
     await unmount(tester);
   });
 
