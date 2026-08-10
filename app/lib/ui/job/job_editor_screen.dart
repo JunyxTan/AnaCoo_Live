@@ -200,18 +200,20 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
             ),
             SectionHeader(strings.collection, icon: Icons.upload_outlined),
             _collectionSection(strings),
+            const SizedBox(height: 20),
             if (widget.jobId != null)
               JobPhotosSection(jobId: widget.jobId!)
-            else ...[
-              SectionHeader(
-                strings.clothPhotos,
+            else
+              SectionCard(
+                title: strings.clothPhotos,
                 icon: Icons.photo_library_outlined,
+                child: Text(
+                  strings.saveJobToAddPhotos,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
               ),
-              EmptyState(
-                message: strings.saveJobToAddPhotos,
-                icon: Icons.checkroom_outlined,
-              ),
-            ],
             SectionHeader(strings.notes, icon: Icons.notes_outlined),
             TextFormField(
               controller: _notes,

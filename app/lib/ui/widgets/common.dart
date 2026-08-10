@@ -59,6 +59,101 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
+/// A titled block of content in a bordered card.
+///
+/// The job page is read at a glance between customers, so related facts are
+/// grouped into a handful of cards instead of one long ribbon of rows.
+class SectionCard extends StatelessWidget {
+  const SectionCard({
+    super.key,
+    required this.title,
+    required this.child,
+    this.icon,
+    this.count,
+    this.trailing,
+  });
+
+  final String title;
+  final Widget child;
+  final IconData? icon;
+  final int? count;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, 12, trailing == null ? 16 : 8, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  title.toUpperCase(),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                if (count != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text('$count', style: theme.textTheme.labelSmall),
+                  ),
+                ],
+                const Spacer(),
+                ?trailing,
+              ],
+            ),
+            const SizedBox(height: 12),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A compact icon action for the header of a [SectionCard].
+class SectionAction extends StatelessWidget {
+  const SectionAction({
+    super.key,
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+        tooltip: tooltip,
+        onPressed: onPressed,
+        icon: Icon(icon, size: 20),
+        visualDensity: VisualDensity.compact,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+        style: IconButton.styleFrom(
+          foregroundColor: Theme.of(context).colorScheme.primary,
+        ),
+      );
+}
+
 class EmptyState extends StatelessWidget {
   const EmptyState({super.key, required this.message, this.icon});
 
@@ -214,6 +309,78 @@ class RushBadge extends StatelessWidget {
       );
 }
 
+IconData appointmentStatusIcon(AppointmentStatus status) => switch (status) {
+      AppointmentStatus.pending => Icons.hourglass_empty,
+      AppointmentStatus.confirmed => Icons.check,
+      AppointmentStatus.done => Icons.done_all,
+      AppointmentStatus.noShow => Icons.person_off_outlined,
+      AppointmentStatus.cancelled => Icons.close,
+    };
+
+/// The accent an appointment status is drawn in: neutral while pending, the
+/// brand colour once confirmed, green when done, red when it fell through.
+Color appointmentStatusColor(ColorScheme scheme, AppointmentStatus status) =>
+    switch (status) {
+      AppointmentStatus.pending => scheme.onSurfaceVariant,
+      AppointmentStatus.confirmed => scheme.primary,
+      AppointmentStatus.done => scheme.tertiary,
+      AppointmentStatus.noShow || AppointmentStatus.cancelled => scheme.error,
+    };
+
+/// A tinted label pill. With [onTap] it reads as a button that opens a picker.
+class TintedPill extends StatelessWidget {
+  const TintedPill({
+    super.key,
+    required this.label,
+    required this.color,
+    this.icon,
+    this.onTap,
+  });
+
+  final String label;
+  final Color color;
+  final IconData? icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: color.withValues(alpha: 0.14),
+      shape: StadiumBorder(
+        side: BorderSide(color: color.withValues(alpha: 0.45)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 15, color: color),
+                const SizedBox(width: 5),
+              ],
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (onTap != null) ...[
+                const SizedBox(width: 2),
+                Icon(Icons.expand_more, size: 16, color: color),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Renders scheduling warnings inline. These never block a save — the tailor
 /// knows their diary better than the app does.
 class ScheduleWarnings extends StatelessWidget {
@@ -279,7 +446,8 @@ class ScheduleWarnings extends StatelessWidget {
       };
 }
 
-/// The job pipeline as a tappable icon stepper.
+/// The job pipeline as a tappable stepper: every step keeps its label, so the
+/// tailor can see where the job is and where it is going without tapping.
 class StatusStepper extends StatelessWidget {
   const StatusStepper({
     super.key,
@@ -304,32 +472,45 @@ class StatusStepper extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (status.isCancelled) {
-      return Chip(
-        avatar: const Icon(Icons.block, size: 18),
-        label: Text(jobStatusLabel(status, languageCode)),
+      final color = theme.colorScheme.error;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.block, size: 18, color: color),
+            const SizedBox(width: 8),
+            Text(
+              jobStatusLabel(status, languageCode),
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       );
     }
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (var i = 0; i < JobStatus.pipeline.length; i++) ...[
-            if (i > 0)
-              Container(
-                width: 10,
-                height: 1,
-                color: theme.colorScheme.outlineVariant,
-              ),
-            _Step(
+    return Row(
+      children: [
+        for (var i = 0; i < JobStatus.pipeline.length; i++)
+          Expanded(
+            child: _Step(
               icon: iconFor(JobStatus.pipeline[i]),
               label: jobStatusLabel(JobStatus.pipeline[i], languageCode),
               reached: i <= status.step,
               current: i == status.step,
+              lineBefore: i == 0 ? null : i <= status.step,
+              lineAfter:
+                  i == JobStatus.pipeline.length - 1 ? null : i < status.step,
               onTap: () => onChanged(JobStatus.pipeline[i]),
             ),
-          ],
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
@@ -340,6 +521,8 @@ class _Step extends StatelessWidget {
     required this.label,
     required this.reached,
     required this.current,
+    required this.lineBefore,
+    required this.lineAfter,
     required this.onTap,
   });
 
@@ -347,6 +530,12 @@ class _Step extends StatelessWidget {
   final String label;
   final bool reached;
   final bool current;
+
+  /// Whether the connector on that side is drawn, and whether it is already
+  /// travelled. Null means there is no neighbour on that side.
+  final bool? lineBefore;
+  final bool? lineAfter;
+
   final VoidCallback onTap;
 
   @override
@@ -362,35 +551,64 @@ class _Step extends StatelessWidget {
         : reached
             ? theme.colorScheme.onPrimaryContainer
             : theme.colorScheme.onSurfaceVariant;
-    return Tooltip(
-      message: label,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: background,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: foreground),
-              if (current) ...[
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: foreground,
-                    fontWeight: FontWeight.w700,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(child: _Connector(travelled: lineBefore)),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: background,
+                    shape: BoxShape.circle,
                   ),
+                  child: Center(child: Icon(icon, size: 20, color: foreground)),
                 ),
+                Expanded(child: _Connector(travelled: lineAfter)),
               ],
-            ],
-          ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: current
+                    ? theme.colorScheme.onSurface
+                    : theme.colorScheme.onSurfaceVariant,
+                fontWeight: current ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class _Connector extends StatelessWidget {
+  const _Connector({required this.travelled});
+
+  final bool? travelled;
+
+  @override
+  Widget build(BuildContext context) {
+    if (travelled == null) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      height: 2,
+      color: travelled!
+          ? scheme.primary
+          // The outline colours are too close to the card in the dark theme to
+          // read as a track, so the untravelled leg is a faded foreground.
+          : scheme.onSurfaceVariant.withValues(alpha: 0.3),
     );
   }
 }
