@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:anacoo_tailor/data/database.dart';
 import 'package:anacoo_tailor/data/enums.dart';
 import 'package:anacoo_tailor/data/job_repository.dart';
 import 'package:anacoo_tailor/domain/shop_time.dart';
+import 'package:anacoo_tailor/services/cloth_photo_store.dart';
 import 'package:anacoo_tailor/services/notification_scheduler.dart';
 import 'package:anacoo_tailor/services/notification_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -33,7 +36,11 @@ void main() {
     await notifications.cancelAll();
 
     scheduler = NotificationScheduler(db: db, sink: notifications);
-    repository = JobRepository(db: db, scheduler: scheduler);
+    repository = JobRepository(
+      db: db,
+      scheduler: scheduler,
+      photos: ClothPhotoStore(root: Directory.systemTemp.createTempSync('photos')),
+    );
   });
 
   tearDown(() async {

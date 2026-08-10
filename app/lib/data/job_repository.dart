@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -5,6 +7,7 @@ import '../domain/reminder_rule.dart';
 import '../domain/scheduling.dart';
 import '../domain/shop_time.dart';
 import '../domain/working_hours.dart';
+import '../services/cloth_photo_store.dart';
 import '../services/notification_scheduler.dart';
 import 'database.dart';
 import 'enums.dart';
@@ -98,10 +101,15 @@ class JobDraft {
 /// Writes jobs, keeps the two appointments in step, and re-plans notifications
 /// after every change.
 class JobRepository {
-  const JobRepository({required this.db, required this.scheduler});
+  const JobRepository({
+    required this.db,
+    required this.scheduler,
+    required this.photos,
+  });
 
   final AppDatabase db;
   final NotificationScheduler scheduler;
+  final ClothPhotoStore photos;
 
   Future<int> save(JobDraft draft) async {
     final now = DateTime.now().toUtc();
@@ -320,7 +328,26 @@ class JobRepository {
         await scheduler.cancelForAppointment(appointment.id);
       }
     }
+    await photos.deleteAllForJob(jobId);
     await db.deleteJob(jobId);
     await scheduler.rebuild();
+  }
+
+  /// Copies a cloth photo into app storage and links it to [jobId].
+  Future<JobPhoto> addClothPhoto(int jobId, File source) async {
+    final relativePath = await photos.importPhoto(jobId: jobId, source: source);
+    final id = await db.insertJobPhoto(
+      JobPhotosCompanion.insert(
+        jobId: jobId,
+        relativePath: relativePath,
+        createdAt: DateTime.now().toUtc(),
+      ),
+    );
+    return db.getJobPhoto(id);
+  }
+
+  Future<void> deleteClothPhoto(JobPhoto photo) async {
+    await photos.deletePhoto(photo.relativePath);
+    await db.deleteJobPhoto(photo.id);
   }
 }

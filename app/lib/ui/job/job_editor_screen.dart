@@ -15,6 +15,7 @@ import '../../domain/shop_time.dart';
 import '../../l10n/app_strings.dart';
 import '../../providers/providers.dart';
 import '../widgets/common.dart';
+import '../widgets/job_photos_section.dart';
 import 'reminder_editor.dart';
 
 /// Create or edit a job, with both of its appointments.
@@ -199,6 +200,18 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
             ),
             SectionHeader(strings.collection, icon: Icons.upload_outlined),
             _collectionSection(strings),
+            if (widget.jobId != null)
+              JobPhotosSection(jobId: widget.jobId!)
+            else ...[
+              SectionHeader(
+                strings.clothPhotos,
+                icon: Icons.photo_library_outlined,
+              ),
+              EmptyState(
+                message: strings.saveJobToAddPhotos,
+                icon: Icons.checkroom_outlined,
+              ),
+            ],
             SectionHeader(strings.notes, icon: Icons.notes_outlined),
             TextFormField(
               controller: _notes,

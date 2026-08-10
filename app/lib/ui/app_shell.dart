@@ -279,9 +279,9 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
         onDestinationSelected: (index) => setState(() => _tab = index),
         destinations: [
           NavigationDestination(
-            icon: const Icon(Icons.wb_sunny_outlined),
-            selectedIcon: const Icon(Icons.wb_sunny),
-            label: strings.tabToday,
+            icon: const Icon(Icons.event_note_outlined),
+            selectedIcon: const Icon(Icons.event_note),
+            label: strings.tabAppointments,
           ),
           NavigationDestination(
             icon: const Icon(Icons.calendar_month_outlined),

@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import '../domain/list_query.dart';
+
 /// UI copy in the three languages the website offers.
 ///
 /// Deliberately a plain Dart class rather than generated ARB bundles: every
@@ -32,6 +34,7 @@ class AppStrings {
 
   String get appTitle => _p('AnaCoo Tailor', 'AnaCoo 裁缝', 'AnaCoo Tailor');
   String get tabToday => _p('Today', '今天', 'Hari ini');
+  String get tabAppointments => _p('Appointments', '预约', 'Temujanji');
   String get tabCalendar => _p('Calendar', '日历', 'Kalendar');
   String get tabCustomers => _p('Customers', '客户', 'Pelanggan');
   String get tabSettings => _p('Settings', '设置', 'Tetapan');
@@ -64,17 +67,41 @@ class AppStrings {
   String get readyForPickup => _p('Ready', '待取', 'Siap');
   String get nothingToday => _p('Nothing today', '今天没有', 'Tiada hari ini');
   String get quietDay => _p('Nothing today', '今天没有', 'Tiada hari ini');
+  String get noAppointments => _p('No appointments', '没有预约', 'Tiada temujanji');
   String get noMatchingAppointments =>
       _p('No matches', '没有匹配', 'Tiada padanan');
+  String get appointments => _p('Appointments', '预约', 'Temujanji');
+
+  // ---------------------------------------------------- list filter / sort
 
   String get filter => _p('Filter', '筛选', 'Tapis');
   String get sort => _p('Sort', '排序', 'Isih');
   String get filterAll => _p('All', '全部', 'Semua');
+  String get filterDropOff => _p('Drop-off', '送件', 'Hantar');
+  String get filterCollection => _p('Collection', '取件', 'Ambil');
+  String get filterOverdue => _p('Overdue', '逾期', 'Lewat');
+  String get filterReady => _p('Ready', '待取', 'Siap');
   String get filterRush => _p('Rush', '加急', 'Segera');
   String get sortTimeAsc => _p('Time ↑', '时间 ↑', 'Masa ↑');
   String get sortTimeDesc => _p('Time ↓', '时间 ↓', 'Masa ↓');
   String get sortName => _p('Name', '姓名', 'Nama');
   String get sortRushFirst => _p('Rush first', '加急优先', 'Segera dulu');
+
+  String appointmentFilterLabel(AppointmentFilter filter) => switch (filter) {
+        AppointmentFilter.all => filterAll,
+        AppointmentFilter.dropOff => filterDropOff,
+        AppointmentFilter.collection => filterCollection,
+        AppointmentFilter.overdue => filterOverdue,
+        AppointmentFilter.ready => filterReady,
+        AppointmentFilter.rush => filterRush,
+      };
+
+  String appointmentSortLabel(AppointmentSort sort) => switch (sort) {
+        AppointmentSort.timeAsc => sortTimeAsc,
+        AppointmentSort.timeDesc => sortTimeDesc,
+        AppointmentSort.name => sortName,
+        AppointmentSort.rushFirst => sortRushFirst,
+      };
 
   String get importDetectedTitle => _p('Import?', '导入？', 'Import?');
   String get importDetectedBody => _p(
@@ -107,6 +134,15 @@ class AppStrings {
   String get notes => _p('Notes', '备注', 'Nota');
   String get rawMessage => _p('Message', '原文', 'Mesej');
   String get status => _p('Status', '状态', 'Status');
+  String get clothPhotos => _p('Cloth photos', '布料照片', 'Foto kain');
+  String get addPhoto => _p('Add photo', '添加照片', 'Tambah foto');
+  String get takePhoto => _p('Camera', '拍照', 'Kamera');
+  String get choosePhoto => _p('Gallery', '相册', 'Galeri');
+  String get deletePhotoConfirm =>
+      _p('Delete photo?', '删除照片？', 'Padam foto?');
+  String get noClothPhotos => _p('No photos yet', '还没有照片', 'Belum ada foto');
+  String get saveJobToAddPhotos =>
+      _p('Save job to add photos', '保存后可加照片', 'Simpan untuk tambah foto');
   String get dropOff => _p('Drop-off', '送件', 'Hantar');
   String get collection => _p('Collection', '取件', 'Ambil');
   String get setLater => _p('Later', '稍后', 'Nanti');
