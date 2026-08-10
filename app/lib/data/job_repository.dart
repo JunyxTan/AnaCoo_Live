@@ -4,9 +4,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../domain/reminder_rule.dart';
-import '../domain/scheduling.dart';
 import '../domain/shop_time.dart';
-import '../domain/working_hours.dart';
 import '../services/cloth_photo_store.dart';
 import '../services/notification_scheduler.dart';
 import 'database.dart';
@@ -88,7 +86,7 @@ class JobDraft {
   String? rawMessage;
   AppointmentDraft dropOff;
 
-  /// Null while the collection date is still unknown — rare after auto-schedule.
+  /// Null while the collection date is still unknown.
   AppointmentDraft? collection;
 
   bool get isNew => jobId == null;
@@ -220,50 +218,12 @@ class JobRepository {
 
   /// Advances one step on the happy path. Returns the new status, or null if
   /// already closed / at the end.
-  Future<JobStatus?> advance(
-    int jobId, {
-    required WorkingHours hours,
-    required int turnaroundDays,
-    int slotMinutes = 30,
-  }) async {
+  Future<JobStatus?> advance(int jobId) async {
     final job = await db.getJob(jobId);
     final next = job.status.next;
     if (next == null) return null;
-
-    if (next == JobStatus.ready) {
-      await ensureCollection(
-        jobId,
-        hours: hours,
-        turnaroundDays: turnaroundDays,
-        slotMinutes: slotMinutes,
-      );
-    }
     await setStatus(jobId, next);
     return next;
-  }
-
-  /// Schedules a collection from turnaround defaults when none exists yet.
-  Future<void> ensureCollection(
-    int jobId, {
-    required WorkingHours hours,
-    required int turnaroundDays,
-    int slotMinutes = 30,
-  }) async {
-    final existing = await db.appointmentOf(jobId, AppointmentType.collection);
-    if (existing != null) return;
-    final dropOff = await db.appointmentOf(jobId, AppointmentType.dropOff);
-    final base = dropOff == null ? shopNow() : toShop(dropOff.scheduledAt);
-    await scheduleCollection(
-      jobId,
-      AppointmentDraft(
-        at: suggestCollection(
-          base,
-          hours,
-          turnaroundDays: turnaroundDays,
-          slotMinutes: slotMinutes,
-        ),
-      ),
-    );
   }
 
   Future<void> _markAppointmentDone(int jobId, AppointmentType type) async {

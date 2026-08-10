@@ -259,11 +259,5 @@ class _Tile extends ConsumerWidget {
 }
 
 Future<void> _advance(BuildContext context, WidgetRef ref, int jobId) async {
-  final repo = ref.read(jobRepositoryProvider);
-  await repo.advance(
-    jobId,
-    hours: ref.read(workingHoursProvider),
-    turnaroundDays: ref.read(turnaroundDaysProvider),
-    slotMinutes: ref.read(slotMinutesProvider),
-  );
+  await ref.read(jobRepositoryProvider).advance(jobId);
 }

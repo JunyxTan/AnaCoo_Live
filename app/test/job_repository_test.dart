@@ -6,7 +6,6 @@ import 'package:anacoo_tailor/data/enums.dart';
 import 'package:anacoo_tailor/data/job_repository.dart';
 import 'package:anacoo_tailor/domain/notification_plan.dart';
 import 'package:anacoo_tailor/domain/shop_time.dart';
-import 'package:anacoo_tailor/domain/working_hours.dart';
 import 'package:anacoo_tailor/services/backup_service.dart';
 import 'package:anacoo_tailor/services/cloth_photo_store.dart';
 import 'package:anacoo_tailor/services/notification_scheduler.dart';
@@ -200,20 +199,20 @@ void main() {
       );
     });
 
-    test('advance walks booked → sewing → ready (auto collection) → done', () async {
+    test('advance walks booked → sewing → ready → done without auto collection',
+        () async {
       final jobId = await repository.save(draft());
-      final hours = WorkingHours.anacooDefault;
 
-      expect(await repository.advance(jobId, hours: hours, turnaroundDays: 3), JobStatus.sewing);
+      expect(await repository.advance(jobId), JobStatus.sewing);
       expect((await db.getJob(jobId)).status, JobStatus.sewing);
 
-      expect(await repository.advance(jobId, hours: hours, turnaroundDays: 3), JobStatus.ready);
+      expect(await repository.advance(jobId), JobStatus.ready);
       expect((await db.getJob(jobId)).status, JobStatus.ready);
-      expect(await db.appointmentOf(jobId, AppointmentType.collection), isNotNull);
+      expect(await db.appointmentOf(jobId, AppointmentType.collection), isNull);
 
-      expect(await repository.advance(jobId, hours: hours, turnaroundDays: 3), JobStatus.done);
+      expect(await repository.advance(jobId), JobStatus.done);
       expect((await db.getJob(jobId)).status, JobStatus.done);
-      expect(await repository.advance(jobId, hours: hours, turnaroundDays: 3), isNull);
+      expect(await repository.advance(jobId), isNull);
     });
   });
 
