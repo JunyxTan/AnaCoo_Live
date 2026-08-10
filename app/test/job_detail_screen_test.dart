@@ -12,6 +12,7 @@ import 'package:anacoo_tailor/providers/providers.dart';
 import 'package:anacoo_tailor/services/cloth_photo_store.dart';
 import 'package:anacoo_tailor/services/notification_scheduler.dart';
 import 'package:anacoo_tailor/services/notification_service.dart';
+import 'package:anacoo_tailor/services/whatsapp_launcher.dart';
 import 'package:anacoo_tailor/ui/job/job_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -42,18 +43,33 @@ class _SilentNotifications extends NotificationService {
   Future<void> cancelAll() async {}
 }
 
+/// Captures what would have been handed to WhatsApp.
+class _RecordingLauncher extends WhatsAppLauncher {
+  const _RecordingLauncher(this.sent);
+
+  final List<({String phone, String message})> sent;
+
+  @override
+  Future<bool> send({required String? phone, required String message}) async {
+    sent.add((phone: phone ?? '', message: message));
+    return true;
+  }
+}
+
 void main() {
   initShopTime();
 
   late AppDatabase db;
   late Directory photoRoot;
   late ClothPhotoStore photos;
+  late List<({String phone, String message})> sent;
 
   setUp(() async {
     db = AppDatabase.memory();
     await db.loadSettings();
     photoRoot = Directory.systemTemp.createTempSync('job-detail-photos');
     photos = ClothPhotoStore(root: photoRoot);
+    sent = [];
   });
 
   tearDown(() async {
@@ -61,7 +77,10 @@ void main() {
     photoRoot.deleteSync(recursive: true);
   });
 
-  Future<int> seedJob({JobStatus status = JobStatus.booked}) {
+  Future<int> seedJob({
+    JobStatus status = JobStatus.booked,
+    String? phone = '0123608968',
+  }) {
     final repository = JobRepository(
       db: db,
       scheduler: NotificationScheduler(db: db, sink: _SilentNotifications()),
@@ -70,7 +89,7 @@ void main() {
     return repository.save(
       JobDraft(
         customerName: 'Junyx Tan',
-        phone: '0123608968',
+        phone: phone,
         service: ServiceType.pantsJeansShortening,
         itemDescription: 'Blue jeans',
         quotedPrice: 45,
@@ -104,6 +123,7 @@ void main() {
           databaseProvider.overrideWithValue(db),
           notificationServiceProvider.overrideWithValue(_SilentNotifications()),
           clothPhotoStoreProvider.overrideWithValue(photos),
+          whatsAppLauncherProvider.overrideWithValue(_RecordingLauncher(sent)),
         ],
         child: MaterialApp(
           theme: AnacooTheme.light(),
@@ -192,11 +212,11 @@ void main() {
     final jobId = await seedJob();
     await pumpDetail(tester, jobId);
 
-    await tester.tap(find.text('Ready').first);
+    await tester.tap(find.text('Sewing').first);
     await tester.pumpAndSettle();
 
     final job = await db.getJob(jobId);
-    expect(job.status, JobStatus.ready);
+    expect(job.status, JobStatus.sewing);
     await unmount(tester);
   });
 
@@ -223,6 +243,92 @@ void main() {
     final collection = await db.appointmentOf(jobId, AppointmentType.collection);
     expect(collection!.status, AppointmentStatus.pending);
     await unmount(tester);
+  });
+
+  group('reaching ready', () {
+    testWidgets('offers the ready message, and sends it on WhatsApp',
+        (tester) async {
+      final jobId = await seedJob(status: JobStatus.sewing);
+      await pumpDetail(tester, jobId);
+
+      await tester.tap(find.text('Next · Ready'));
+      await tester.pumpAndSettle();
+
+      // The job has already moved; the prompt is about telling the customer.
+      expect((await db.getJob(jobId)).status, JobStatus.ready);
+      expect(find.text('Tell the customer?'), findsOneWidget);
+      // The dialog previews what will go out.
+      expect(
+        find.textContaining('is ready for collection'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('WhatsApp').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tell the customer?'), findsNothing);
+      expect(sent, hasLength(1));
+      expect(sent.single.phone, '0123608968');
+      expect(sent.single.message, contains('Junyx Tan'));
+      expect(sent.single.message, contains('Pants / jeans shortening'));
+      await unmount(tester);
+    });
+
+    testWidgets('leaves the job ready when the prompt is dismissed',
+        (tester) async {
+      final jobId = await seedJob(status: JobStatus.sewing);
+      await pumpDetail(tester, jobId);
+
+      await tester.tap(find.text('Next · Ready'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tell the customer?'), findsNothing);
+      expect((await db.getJob(jobId)).status, JobStatus.ready);
+      expect(sent, isEmpty);
+      await unmount(tester);
+    });
+
+    testWidgets('offers it from the stepper too', (tester) async {
+      final jobId = await seedJob();
+      await pumpDetail(tester, jobId);
+
+      await tester.tap(find.text('Ready').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tell the customer?'), findsOneWidget);
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+      await unmount(tester);
+    });
+
+    testWidgets('stays quiet with no number to message', (tester) async {
+      final jobId = await seedJob(status: JobStatus.sewing, phone: null);
+      await pumpDetail(tester, jobId);
+
+      await tester.tap(find.text('Next · Ready'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tell the customer?'), findsNothing);
+      expect((await db.getJob(jobId)).status, JobStatus.ready);
+      await unmount(tester);
+    });
+
+    testWidgets('stays quiet on the steps with nothing to say', (tester) async {
+      final jobId = await seedJob();
+      await pumpDetail(tester, jobId);
+
+      // Booked to sewing has no message, and nor does going back a step.
+      await tester.tap(find.text('Next · Sewing'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tell the customer?'), findsNothing);
+
+      await tester.tap(find.text('Booked').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Tell the customer?'), findsNothing);
+      await unmount(tester);
+    });
   });
 
   testWidgets('a job sitting in ready is dated from when it got there',

@@ -285,8 +285,7 @@ class _StatusCard extends ConsumerWidget {
           if (next != null) ...[
             const SizedBox(height: 14),
             FilledButton.icon(
-              onPressed: () =>
-                  unawaited(ref.read(jobRepositoryProvider).advance(job.id)),
+              onPressed: () => unawaited(advanceJob(context, ref, bundle: bundle)),
               icon: const Icon(Icons.arrow_forward),
               label: Text(
                 '${strings.nextAction} · ${jobStatusLabel(next, language)}',
@@ -804,32 +803,8 @@ class _MessageBar extends ConsumerWidget {
     WidgetRef ref,
     TemplateKind kind,
   ) async {
-    final strings = ref.read(appStringsProvider);
-    final message = buildTemplateMessage(
-      bundle: bundle,
-      kind: kind,
-      templates: ref.read(templatesProvider),
-      languageCode: ref.read(languageCodeProvider),
-    );
-    final phone = bundle.customer.whatsappNumber ?? bundle.customer.phone;
-    if (phone == null || phone.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(strings.noWhatsappNumber)),
-      );
-      return;
-    }
-    final ok = await ref
-        .read(whatsAppLauncherProvider)
-        .send(phone: phone, message: message);
-    if (!ok) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.couldNotOpenWhatsapp)),
-        );
-      }
-      return;
-    }
-    if (!context.mounted) return;
+    final ok = await sendTemplate(context, ref, bundle: bundle, kind: kind);
+    if (!ok || !context.mounted) return;
     await syncAfterWhatsAppAction(context, ref, bundle: bundle, kind: kind);
   }
 }
@@ -877,15 +852,123 @@ class _MessageButton extends StatelessWidget {
   }
 }
 
-/// Applies a stepper change.
+/// Moves the job one step along, then offers the message that goes with the
+/// step it landed on.
+Future<void> advanceJob(
+  BuildContext context,
+  WidgetRef ref, {
+  required JobBundle bundle,
+}) async {
+  final from = bundle.job.status;
+  final to = await ref.read(jobRepositoryProvider).advance(bundle.job.id);
+  if (to == null || !context.mounted) return;
+  await offerStatusMessage(context, ref, bundle: bundle, from: from, to: to);
+}
+
+/// Applies a stepper change, offering the same message a Next tap would.
 Future<void> applyJobStatusChange(
   BuildContext context,
   WidgetRef ref, {
   required JobBundle bundle,
   required JobStatus status,
 }) async {
-  final repo = ref.read(jobRepositoryProvider);
-  await repo.setStatus(bundle.job.id, status);
+  final from = bundle.job.status;
+  if (from == status) return;
+  await ref.read(jobRepositoryProvider).setStatus(bundle.job.id, status);
+  if (!context.mounted) return;
+  await offerStatusMessage(context, ref, bundle: bundle, from: from, to: status);
+}
+
+/// Asks whether to tell the customer, for the one step that has something to
+/// say: a job reaching ready is news worth sending, and the templates carry a
+/// message for it. Moving a job back, or on to a step with no template, passes
+/// without a prompt — a tailor correcting a mis-tap should not have to dismiss
+/// a dialog.
+Future<void> offerStatusMessage(
+  BuildContext context,
+  WidgetRef ref, {
+  required JobBundle bundle,
+  required JobStatus from,
+  required JobStatus to,
+}) async {
+  if (to != JobStatus.ready || from.step >= JobStatus.ready.step) return;
+  final phone = bundle.customer.whatsappNumber ?? bundle.customer.phone;
+  if (phone == null || phone.trim().isEmpty) return;
+
+  final strings = ref.read(appStringsProvider);
+  final message = buildTemplateMessage(
+    bundle: bundle,
+    kind: TemplateKind.ready,
+    templates: ref.read(templatesProvider),
+    languageCode: ref.read(languageCodeProvider),
+  );
+
+  final send = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      final theme = Theme.of(context);
+      return AlertDialog(
+        title: Text(strings.tellCustomer),
+        content: Container(
+          width: double.maxFinite,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            // The dialog itself already sits on the high container colour, so
+            // the quoted message needs the lowest one to read as a quote.
+            color: theme.colorScheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+          ),
+          child: Text(message, style: theme.textTheme.bodySmall),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(strings.notNow),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.of(context).pop(true),
+            icon: const Icon(Icons.chat_bubble_outline, size: 18),
+            label: Text(strings.whatsapp),
+          ),
+        ],
+      );
+    },
+  );
+  if (send != true || !context.mounted) return;
+  await sendTemplate(context, ref, bundle: bundle, kind: TemplateKind.ready);
+}
+
+/// Hands a filled template to WhatsApp, saying why when it cannot.
+Future<bool> sendTemplate(
+  BuildContext context,
+  WidgetRef ref, {
+  required JobBundle bundle,
+  required TemplateKind kind,
+}) async {
+  final strings = ref.read(appStringsProvider);
+  final phone = bundle.customer.whatsappNumber ?? bundle.customer.phone;
+  if (phone == null || phone.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(strings.noWhatsappNumber)),
+    );
+    return false;
+  }
+  final message = buildTemplateMessage(
+    bundle: bundle,
+    kind: kind,
+    templates: ref.read(templatesProvider),
+    languageCode: ref.read(languageCodeProvider),
+  );
+  final ok = await ref
+      .read(whatsAppLauncherProvider)
+      .send(phone: phone, message: message);
+  if (!ok && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(strings.couldNotOpenWhatsapp)),
+    );
+  }
+  return ok;
 }
 
 /// Advances job status after a successful WhatsApp send.
