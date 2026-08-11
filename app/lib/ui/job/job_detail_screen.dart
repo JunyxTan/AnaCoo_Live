@@ -716,59 +716,49 @@ class _MessageBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final strings = ref.watch(appStringsProvider);
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return BottomActionBar(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: 14,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    strings.whatsapp.toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ],
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 14,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  for (final kind in TemplateKind.values) ...[
-                    Expanded(
-                      child: _MessageButton(
-                        kind: kind,
-                        label: switch (kind) {
-                          TemplateKind.confirm => strings.whatsappConfirm,
-                          TemplateKind.ready => strings.whatsappReady,
-                          TemplateKind.reschedule => strings.whatsappReschedule,
-                        },
-                        onPressed: () => unawaited(_send(context, ref, kind)),
-                      ),
-                    ),
-                    if (kind != TemplateKind.values.last)
-                      const SizedBox(width: 8),
-                  ],
-                ],
+              const SizedBox(width: 6),
+              Text(
+                strings.whatsapp.toUpperCase(),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              for (final kind in TemplateKind.values) ...[
+                Expanded(
+                  child: _MessageButton(
+                    kind: kind,
+                    label: switch (kind) {
+                      TemplateKind.confirm => strings.whatsappConfirm,
+                      TemplateKind.ready => strings.whatsappReady,
+                      TemplateKind.reschedule => strings.whatsappReschedule,
+                    },
+                    onPressed: () => unawaited(_send(context, ref, kind)),
+                  ),
+                ),
+                if (kind != TemplateKind.values.last) const SizedBox(width: 8),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }

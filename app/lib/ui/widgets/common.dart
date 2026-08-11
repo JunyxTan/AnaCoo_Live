@@ -154,6 +154,40 @@ class SectionAction extends StatelessWidget {
       );
 }
 
+/// The chrome for the buttons pinned below a screen's scrolling content: a
+/// shaded strip with a top edge, held clear of the system inset.
+///
+/// The buttons live down here because that is where the hand already is. It
+/// also means a long list cannot scroll them out of reach.
+///
+/// One widget serves both hosts: inside the tab shell the navigation bar
+/// answers for the bottom inset — and `Scaffold` zeroes the padding it hands
+/// its body when it has one — so the [SafeArea] adds nothing there and lifts
+/// the bar clear of the home indicator on a pushed route.
+class BottomActionBar extends StatelessWidget {
+  const BottomActionBar({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 class EmptyState extends StatelessWidget {
   const EmptyState({super.key, required this.message, this.icon});
 
