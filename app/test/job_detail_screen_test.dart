@@ -137,12 +137,12 @@ void main() {
     expect(find.text('+60123608968'), findsOneWidget);
 
     // Every pipeline step keeps its label, not just the current one.
-    for (final label in ['Booked', 'Sewing', 'Ready', 'Collected']) {
+    for (final label in ['Booked', 'Received', 'Sewing', 'Ready', 'Collected']) {
       expect(find.text(label), findsWidgets, reason: 'missing step $label');
     }
-    expect(find.text('Next · Sewing'), findsOneWidget);
+    expect(find.text('Next · Received'), findsOneWidget);
 
-    // The steps carry their dates: booked today, sewing when the garment
+    // The steps carry their dates: booked today, received when the garment
     // arrives, done when it is collected.
     const formats = Formats('en');
     expect(find.text(formats.dayMonth(shopNow())), findsOneWidget);
@@ -251,7 +251,7 @@ void main() {
 
     expect(find.text('Cancel'), findsOneWidget);
     expect(find.text('Booked'), findsNothing);
-    expect(find.text('Next · Sewing'), findsNothing);
+    expect(find.text('Next · Received'), findsNothing);
     await unmount(tester);
   });
 
@@ -259,10 +259,10 @@ void main() {
     final jobId = await seedJob();
     await pumpDetail(tester, jobId, language: 'vi');
 
-    for (final label in ['Đã đặt', 'Đang may', 'Sẵn sàng', 'Đã lấy']) {
+    for (final label in ['Đã đặt', 'Đã nhận', 'Đang may', 'Sẵn sàng', 'Đã lấy']) {
       expect(find.text(label), findsWidgets, reason: 'missing step $label');
     }
-    expect(find.text('Tiếp · Đang may'), findsOneWidget);
+    expect(find.text('Tiếp · Đã nhận'), findsOneWidget);
     expect(find.text('Cắt lai quần / quần jean'), findsOneWidget);
 
     // `intl` has Vietnamese date symbols, so the steps are dated in Vietnamese

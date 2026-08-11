@@ -11,13 +11,17 @@ enum ServiceType {
   other,
 }
 
-/// Four-step shop pipeline: `booked → sewing → ready → done`,
+/// Five-step shop pipeline: `booked → received → sewing → ready → done`,
 /// with `cancelled` reachable from anywhere.
 ///
-/// Older names (`requested`, `confirmed`, `received`, `inProgress`,
-/// `collected`) are remapped in schema v2 and on backup import.
+/// `received` records the garment being handed over, which happens on its own
+/// day and is worth knowing about separately from the work having started.
+///
+/// Older names (`requested`, `confirmed`, `inProgress`, `collected`) are
+/// remapped in schema v2 and on backup import.
 enum JobStatus {
   booked,
+  received,
   sewing,
   ready,
   done,
@@ -26,6 +30,7 @@ enum JobStatus {
   /// The happy-path pipeline, in order, for the status stepper / Next button.
   static const List<JobStatus> pipeline = [
     JobStatus.booked,
+    JobStatus.received,
     JobStatus.sewing,
     JobStatus.ready,
     JobStatus.done,
@@ -60,7 +65,11 @@ enum AppointmentStatus {
       this == AppointmentStatus.pending || this == AppointmentStatus.confirmed;
 }
 
-/// Remaps status strings from schema v1 / old backups onto the v2 enum names.
+/// Remaps status strings from schema v1 / old backups onto the current enum
+/// names.
+///
+/// The v1 pipeline also had a `received` step, and it meant what this one does,
+/// so those rows land back on it rather than jumping ahead to sewing.
 JobStatus jobStatusFromStorage(String? raw) {
   switch (raw) {
     case 'requested':
@@ -68,6 +77,7 @@ JobStatus jobStatusFromStorage(String? raw) {
     case 'booked':
       return JobStatus.booked;
     case 'received':
+      return JobStatus.received;
     case 'inProgress':
     case 'sewing':
       return JobStatus.sewing;

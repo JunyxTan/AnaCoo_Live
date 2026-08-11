@@ -205,7 +205,10 @@ class JobRepository {
 
   Future<void> setStatus(int jobId, JobStatus status) async {
     await db.setJobStatus(jobId, status);
-    if (status == JobStatus.sewing) {
+    // Receiving the garment is the drop-off happening, so that appointment is
+    // done from this step onwards — including when the stepper is tapped
+    // straight to a later one.
+    if (!status.isCancelled && status.step >= JobStatus.received.step) {
       await _markAppointmentDone(jobId, AppointmentType.dropOff);
     }
     if (status == JobStatus.done) {

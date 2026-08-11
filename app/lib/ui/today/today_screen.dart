@@ -72,82 +72,46 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
           ),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      body: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: widget.onPasteAppointment,
-                  icon: const Icon(Icons.content_paste_go),
-                  label: Text(strings.pasteAppointment),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: widget.onNewJob,
-                  icon: const Icon(Icons.add),
-                  label: Text(strings.newJob),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => unawaited(_pickFilter(strings)),
-                  icon: Icon(
-                    _filter == AppointmentFilter.all
-                        ? Icons.filter_list_outlined
-                        : Icons.filter_alt,
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              children: [
+                if (items.isEmpty)
+                  EmptyState(
+                    message: hasActive
+                        ? strings.noMatchingAppointments
+                        : strings.noAppointments,
+                    icon: hasActive
+                        ? Icons.search_off_outlined
+                        : Icons.event_note_outlined,
+                  )
+                else ...[
+                  SectionHeader(
+                    strings.appointments,
+                    count: items.length,
+                    icon: Icons.event_note_outlined,
                   ),
-                  label: Text(
-                    _filter == AppointmentFilter.all
-                        ? strings.filter
-                        : strings.appointmentFilterLabel(_filter),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => unawaited(_pickSort(strings)),
-                  icon: const Icon(Icons.sort),
-                  label: Text(
-                    _sort == AppointmentSort.timeAsc
-                        ? strings.sort
-                        : strings.appointmentSortLabel(_sort),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (items.isEmpty)
-            EmptyState(
-              message: hasActive
-                  ? strings.noMatchingAppointments
-                  : strings.noAppointments,
-              icon: hasActive
-                  ? Icons.search_off_outlined
-                  : Icons.event_note_outlined,
-            )
-          else ...[
-            SectionHeader(
-              strings.appointments,
-              count: items.length,
-              icon: Icons.event_note_outlined,
+                  for (final entry in items)
+                    _Tile(
+                      entry: entry,
+                      language: language,
+                      showDate: true,
+                    ),
+                ],
+              ],
             ),
-            for (final entry in items)
-              _Tile(
-                entry: entry,
-                language: language,
-                showDate: true,
-              ),
-          ],
+          ),
+          _ActionBar(
+            strings: strings,
+            filter: _filter,
+            sort: _sort,
+            onPaste: widget.onPasteAppointment,
+            onNewJob: widget.onNewJob,
+            onFilter: () => unawaited(_pickFilter(strings)),
+            onSort: () => unawaited(_pickSort(strings)),
+          ),
         ],
       ),
     );
@@ -207,6 +171,93 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     );
     if (choice == null || !mounted) return;
     setState(() => _sort = choice);
+  }
+}
+
+/// The four things to do from this screen, pinned below the list: take in work
+/// with Paste or New, then narrow what the list shows with Filter or Sort.
+///
+/// Filter and Sort name the choice in force rather than themselves once one is
+/// set, so the list can never be quietly filtered with nothing to say so.
+class _ActionBar extends StatelessWidget {
+  const _ActionBar({
+    required this.strings,
+    required this.filter,
+    required this.sort,
+    required this.onPaste,
+    required this.onNewJob,
+    required this.onFilter,
+    required this.onSort,
+  });
+
+  final AppStrings strings;
+  final AppointmentFilter filter;
+  final AppointmentSort sort;
+  final VoidCallback onPaste;
+  final VoidCallback onNewJob;
+  final VoidCallback onFilter;
+  final VoidCallback onSort;
+
+  @override
+  Widget build(BuildContext context) {
+    return BottomActionBar(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: onPaste,
+                  icon: const Icon(Icons.content_paste_go),
+                  label: Text(strings.pasteAppointment),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onNewJob,
+                  icon: const Icon(Icons.add),
+                  label: Text(strings.newJob),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onFilter,
+                  icon: Icon(
+                    filter == AppointmentFilter.all
+                        ? Icons.filter_list_outlined
+                        : Icons.filter_alt,
+                  ),
+                  label: Text(
+                    filter == AppointmentFilter.all
+                        ? strings.filter
+                        : strings.appointmentFilterLabel(filter),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onSort,
+                  icon: const Icon(Icons.sort),
+                  label: Text(
+                    sort == AppointmentSort.timeAsc
+                        ? strings.sort
+                        : strings.appointmentSortLabel(sort),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -275,11 +275,11 @@ class _StatusCard extends ConsumerWidget {
 
 /// The date to print above each pipeline step.
 ///
-/// The pairings follow what `setStatus` already does with a job: moving it to
-/// sewing marks the drop-off done, and finishing it marks the collection done.
-/// So the drop-off dates the sewing step and the collection dates the last one,
-/// which leaves the row reading left to right as the job's timeline: taken in,
-/// garment arrives, marked ready, collected.
+/// The pairings follow what `setStatus` already does with a job: reaching
+/// received marks the drop-off done, and finishing it marks the collection done.
+/// So the drop-off dates the received step and the collection dates the last
+/// one, which leaves the row reading left to right as the job's timeline: taken
+/// in, garment arrives, marked ready, collected.
 ///
 /// Steps with nothing recorded are left blank — the shop keeps no timestamp for
 /// the start of sewing, and `readyAt` is cleared once a job leaves ready.
@@ -289,7 +289,7 @@ Map<JobStatus, String> pipelineDates(JobBundle bundle, Formats formats) {
   return {
     JobStatus.booked: formats.dayMonth(toShop(job.createdAt)),
     if (bundle.dropOff != null)
-      JobStatus.sewing: formats.dayMonth(bundle.dropOff!.at),
+      JobStatus.received: formats.dayMonth(bundle.dropOff!.at),
     if (readyAt != null) JobStatus.ready: formats.dayMonth(toShop(readyAt)),
     if (bundle.collection != null)
       JobStatus.done: formats.dayMonth(bundle.collection!.at),
@@ -716,59 +716,49 @@ class _MessageBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final strings = ref.watch(appStringsProvider);
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return BottomActionBar(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: 14,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    strings.whatsapp.toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ],
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 14,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  for (final kind in TemplateKind.values) ...[
-                    Expanded(
-                      child: _MessageButton(
-                        kind: kind,
-                        label: switch (kind) {
-                          TemplateKind.confirm => strings.whatsappConfirm,
-                          TemplateKind.ready => strings.whatsappReady,
-                          TemplateKind.reschedule => strings.whatsappReschedule,
-                        },
-                        onPressed: () => unawaited(_send(context, ref, kind)),
-                      ),
-                    ),
-                    if (kind != TemplateKind.values.last)
-                      const SizedBox(width: 8),
-                  ],
-                ],
+              const SizedBox(width: 6),
+              Text(
+                strings.whatsapp.toUpperCase(),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              for (final kind in TemplateKind.values) ...[
+                Expanded(
+                  child: _MessageButton(
+                    kind: kind,
+                    label: switch (kind) {
+                      TemplateKind.confirm => strings.whatsappConfirm,
+                      TemplateKind.ready => strings.whatsappReady,
+                      TemplateKind.reschedule => strings.whatsappReschedule,
+                    },
+                    onPressed: () => unawaited(_send(context, ref, kind)),
+                  ),
+                ),
+                if (kind != TemplateKind.values.last) const SizedBox(width: 8),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }

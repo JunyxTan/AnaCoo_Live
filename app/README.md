@@ -9,7 +9,11 @@ No backend, no login, no network required for anything the app does.
 
 ## How work moves (v2)
 
-Pipeline is four steps: **Booked → Sewing → Ready → Collected**.
+Pipeline is five steps: **Booked → Received → Sewing → Ready → Collected**.
+
+Received is the garment being handed over, which happens on its own day and is
+worth knowing about separately from the work having started. Reaching it marks
+the drop-off appointment done.
 
 The last step is `JobStatus.done` in code — the enum is persisted by name, so it
 keeps the name it was stored under while the UI calls it what it is.
@@ -21,7 +25,13 @@ keeps the name it was stored under while the UI calls it what it is.
   turnaround setting). It is never created automatically.
 - Today tiles have a **Next** button that advances the job one step. Collected
   closes any open appointments.
+- Paste, New, Filter and Sort are pinned in a bar below the Today list, where
+  the hand already is and where a long list cannot scroll them out of reach.
 - WhatsApp **Ready** jumps the job to Ready; Confirm only messages the customer.
+- Swipe a name left in Customers to archive it. Archiving only hides the name —
+  the jobs and appointments carry on, because the shop still has the clothes.
+  The snackbar offers Undo, and the archive itself is one tap away in the app
+  bar, where a swipe puts the name back.
 
 Launcher icons are generated from `assets/branding/app_icon.png` (AnaCoo mark
 on black). Regenerate with `dart run flutter_launcher_icons`.
@@ -69,7 +79,7 @@ flutter run
 
 ```sh
 flutter analyze
-flutter test                     # 139 tests, no device needed
+flutter test                     # 153 tests, no device needed
 ```
 
 `test/parser_test.dart` covers the six cases the spec calls out (the exact

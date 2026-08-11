@@ -18,6 +18,10 @@ void main() {
         JobStatus.ready,
       );
       expect(
+        statusAfterWhatsAppAction(JobStatus.received, TemplateKind.ready),
+        JobStatus.ready,
+      );
+      expect(
         statusAfterWhatsAppAction(JobStatus.sewing, TemplateKind.ready),
         JobStatus.ready,
       );
@@ -49,8 +53,9 @@ void main() {
   });
 
   group('nextStatusFor', () {
-    test('walks the four-step pipeline', () {
-      expect(nextStatusFor(JobStatus.booked), JobStatus.sewing);
+    test('walks the five-step pipeline', () {
+      expect(nextStatusFor(JobStatus.booked), JobStatus.received);
+      expect(nextStatusFor(JobStatus.received), JobStatus.sewing);
       expect(nextStatusFor(JobStatus.sewing), JobStatus.ready);
       expect(nextStatusFor(JobStatus.ready), JobStatus.done);
       expect(nextStatusFor(JobStatus.done), isNull);
@@ -62,7 +67,8 @@ void main() {
     test('remaps legacy names', () {
       expect(jobStatusFromStorage('requested'), JobStatus.booked);
       expect(jobStatusFromStorage('confirmed'), JobStatus.booked);
-      expect(jobStatusFromStorage('received'), JobStatus.sewing);
+      // The v1 pipeline had this step too, and it meant the same thing.
+      expect(jobStatusFromStorage('received'), JobStatus.received);
       expect(jobStatusFromStorage('inProgress'), JobStatus.sewing);
       expect(jobStatusFromStorage('collected'), JobStatus.done);
       expect(jobStatusFromStorage('done'), JobStatus.done);

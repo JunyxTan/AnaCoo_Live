@@ -252,6 +252,15 @@ class AppStrings {
       );
   String get noCustomers =>
       _p('No customers', '还没有客户', 'Tiada pelanggan', 'Chưa có khách');
+  String get archive => _p('Archive', '归档', 'Arkib', 'Lưu trữ');
+  String get restore => _p('Restore', '恢复', 'Pulih', 'Phục hồi');
+  String get archived => _p('Archived', '已归档', 'Diarkib', 'Đã lưu trữ');
+  String get noArchivedCustomers => _p(
+        'Nothing archived',
+        '没有归档',
+        'Tiada arkib',
+        'Chưa lưu trữ gì',
+      );
   String get newJobForCustomer =>
       _p('New job', '新建工作', 'Kerja baharu', 'Đơn mới');
 

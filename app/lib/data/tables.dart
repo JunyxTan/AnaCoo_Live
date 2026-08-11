@@ -11,6 +11,11 @@ class Customers extends Table {
   TextColumn get whatsappNumber => text().nullable()();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
+
+  /// Set when the customer was swiped out of the directory, cleared when they
+  /// are restored. Archiving only hides the name: their jobs and appointments
+  /// carry on as they were, because the shop still has the clothes.
+  DateTimeColumn get archivedAt => dateTime().nullable()();
 }
 
 class Jobs extends Table {

@@ -131,6 +131,23 @@ void main() {
       expect((await db.getJob(jobId)).readyAt, isNull);
     });
 
+    test('received closes the drop-off, and so does skipping past it', () async {
+      final jobId = await repository.save(draft());
+
+      await repository.setStatus(jobId, JobStatus.received);
+      expect(
+        (await db.appointmentOf(jobId, AppointmentType.dropOff))!.status,
+        AppointmentStatus.done,
+      );
+
+      final skipped = await repository.save(draft());
+      await repository.setStatus(skipped, JobStatus.ready);
+      expect(
+        (await db.appointmentOf(skipped, AppointmentType.dropOff))!.status,
+        AppointmentStatus.done,
+      );
+    });
+
     test('done closes both appointments', () async {
       final jobId = await repository.save(
         draft()..collection = AppointmentDraft(at: shopDateTime(2026, 8, 9, 15, 0)),
@@ -199,9 +216,13 @@ void main() {
       );
     });
 
-    test('advance walks booked → sewing → ready → done without auto collection',
-        () async {
+    test(
+        'advance walks booked → received → sewing → ready → done without auto '
+        'collection', () async {
       final jobId = await repository.save(draft());
+
+      expect(await repository.advance(jobId), JobStatus.received);
+      expect((await db.getJob(jobId)).status, JobStatus.received);
 
       expect(await repository.advance(jobId), JobStatus.sewing);
       expect((await db.getJob(jobId)).status, JobStatus.sewing);
@@ -213,6 +234,53 @@ void main() {
       expect(await repository.advance(jobId), JobStatus.done);
       expect((await db.getJob(jobId)).status, JobStatus.done);
       expect(await repository.advance(jobId), isNull);
+    });
+  });
+
+  group('archiving a customer', () {
+    test('takes the name out of the directory and puts it back', () async {
+      final jobId = await repository.save(draft());
+      final customerId = (await db.getJob(jobId)).customerId;
+
+      expect(await db.watchCustomers().first, hasLength(1));
+      expect(await db.watchCustomers(archived: true).first, isEmpty);
+
+      await db.setCustomerArchived(customerId, true);
+      expect(await db.watchCustomers().first, isEmpty);
+      expect(
+        (await db.watchCustomers(archived: true).first).single.name,
+        'Siti',
+      );
+
+      await db.setCustomerArchived(customerId, false);
+      expect((await db.watchCustomers().first).single.name, 'Siti');
+      expect(await db.watchCustomers(archived: true).first, isEmpty);
+      expect((await db.getCustomer(customerId)).archivedAt, isNull);
+    });
+
+    test('leaves their work alone — the shop still has the clothes', () async {
+      final jobId = await repository.save(draft());
+      final customerId = (await db.getJob(jobId)).customerId;
+
+      await db.setCustomerArchived(customerId, true);
+
+      expect(await db.getJob(jobId), isNotNull);
+      expect(await db.appointmentOf(jobId, AppointmentType.dropOff), isNotNull);
+      expect(await db.allAppointmentEntries(), hasLength(1));
+    });
+
+    test('still matches a search of the archive', () async {
+      final jobId = await repository.save(draft());
+      await db.setCustomerArchived((await db.getJob(jobId)).customerId, true);
+
+      expect(
+        await db.watchCustomers(query: 'sit', archived: true).first,
+        hasLength(1),
+      );
+      expect(
+        await db.watchCustomers(query: 'nobody', archived: true).first,
+        isEmpty,
+      );
     });
   });
 
@@ -247,6 +315,19 @@ void main() {
         shopDateTime(2026, 8, 9, 15, 0),
       );
       expect((await fresh.allBlockedDates()).single.reason, 'Christmas');
+    });
+
+    test('remembers which customers were archived', () async {
+      final jobId = await repository.save(draft());
+      await db.setCustomerArchived((await db.getJob(jobId)).customerId, true);
+
+      final encoded = jsonEncode(await BackupService(db).buildBackup());
+      final fresh = AppDatabase.memory();
+      addTearDown(fresh.close);
+      await BackupService(fresh).restore(encoded);
+
+      expect(await fresh.watchCustomers().first, isEmpty);
+      expect(await fresh.watchCustomers(archived: true).first, hasLength(1));
     });
 
     test('rejects a file that is not an AnaCoo backup', () async {
