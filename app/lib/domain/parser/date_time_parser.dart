@@ -203,15 +203,15 @@ const Map<String, bool> _meridiemPm = {
 };
 
 final RegExp _separatedTime = RegExp(r'(\d{1,2})\s*[:.：h]\s*(\d{2})');
+final RegExp _bareHourWithMeridiem = RegExp(
+  r'(\d{1,2})\s*(am|pm|a\.m\.|p\.m\.)',
+  caseSensitive: false,
+);
 
 /// `8h`, `20 h` — Vietnamese marks a whole hour with a trailing `h` and no
 /// minutes. The negative lookahead keeps it off English words like `8 hours`.
 final RegExp _hourMarkerOnly = RegExp(
   r'(?<!\d)(\d{1,2})\s*h(?![a-z0-9])',
-  caseSensitive: false,
-);
-final RegExp _bareHourWithMeridiem = RegExp(
-  r'(\d{1,2})\s*(am|pm|a\.m\.|p\.m\.)',
   caseSensitive: false,
 );
 final RegExp _fourDigitTime = RegExp(r'\b(\d{4})\b');
