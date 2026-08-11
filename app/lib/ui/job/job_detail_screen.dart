@@ -42,20 +42,7 @@ class JobDetailScreen extends ConsumerWidget {
           IconButton(
             tooltip: strings.edit,
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () => _openEditor(context, jobId),
-          ),
-          PopupMenuButton<void>(
-            tooltip: strings.delete,
-            itemBuilder: (_) => [
-              PopupMenuItem<void>(
-                onTap: () => unawaited(_confirmDelete(context, ref, strings)),
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.delete_outline),
-                  title: Text(strings.delete),
-                ),
-              ),
-            ],
+            onPressed: () => unawaited(_openEditor(context, jobId)),
           ),
         ],
       ),
@@ -68,38 +55,25 @@ class JobDetailScreen extends ConsumerWidget {
       ),
     );
   }
-
-  Future<void> _confirmDelete(
-    BuildContext context,
-    WidgetRef ref,
-    AppStrings strings,
-  ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        content: Text(strings.deleteJobConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(strings.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(strings.delete),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !context.mounted) return;
-    await ref.read(jobRepositoryProvider).deleteJob(jobId);
-    if (context.mounted) Navigator.of(context).pop();
-  }
 }
 
-void _openEditor(BuildContext context, int jobId) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(builder: (_) => JobEditorScreen(jobId: jobId)),
+/// Opens the editor, and closes this page behind it if the job was deleted
+/// there — the editor is the only place that can happen, and once it has there
+/// is nothing left here to show.
+///
+/// The pop waits for the editor's own route to come off first, so it is this
+/// page that closes rather than whatever happens to be on top.
+Future<void> _openEditor(BuildContext context, int jobId) async {
+  var deleted = false;
+  await Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      builder: (_) => JobEditorScreen(
+        jobId: jobId,
+        onDeleted: () => deleted = true,
+      ),
+    ),
   );
+  if (deleted && context.mounted) Navigator.of(context).pop();
 }
 
 class _Body extends ConsumerWidget {
