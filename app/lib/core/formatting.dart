@@ -12,6 +12,7 @@ class Formats {
   String get _locale => switch (languageCode) {
         'zh' => 'zh',
         'ms' => 'ms',
+        'vi' => 'vi',
         _ => 'en',
       };
 

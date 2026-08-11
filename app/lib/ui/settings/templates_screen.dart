@@ -39,6 +39,7 @@ class _TemplatesScreenState extends ConsumerState<TemplatesScreen> {
               ButtonSegment(value: 'en', label: Text('EN')),
               ButtonSegment(value: 'zh', label: Text('中文')),
               ButtonSegment(value: 'ms', label: Text('BM')),
+              ButtonSegment(value: 'vi', label: Text('VI')),
             ],
             selected: {_language},
             onSelectionChanged: (value) =>

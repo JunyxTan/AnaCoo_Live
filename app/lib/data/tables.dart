@@ -95,7 +95,7 @@ class AppSettings extends Table {
   IntColumn get dailyAgendaMinutes => integer().withDefault(const Constant(9 * 60))();
   BoolColumn get dailyAgendaEnabled => boolean().withDefault(const Constant(true))();
 
-  /// `en`, `zh`, `ms`, or `system`.
+  /// `en`, `zh`, `ms`, `vi`, or `system`.
   TextColumn get languageCode => text().withDefault(const Constant('system'))();
 
   /// Nudge when a job has been `ready` this many days.

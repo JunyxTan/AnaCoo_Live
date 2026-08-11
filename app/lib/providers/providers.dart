@@ -65,7 +65,7 @@ final settingsProvider = StreamProvider<AppSetting>(
 );
 
 /// The resolved UI language: the explicit choice, or the device's if it is one
-/// of the three the shop speaks, or English.
+/// the shop speaks, or English.
 final languageCodeProvider = Provider<String>((ref) {
   final settings = ref.watch(settingsProvider).value;
   final choice = settings?.languageCode ?? 'system';

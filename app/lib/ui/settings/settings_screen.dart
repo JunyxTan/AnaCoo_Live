@@ -388,18 +388,22 @@ class _WeekdayRow extends ConsumerWidget {
           ),
         ),
       ),
-      onTap: day == null ? null : () => _editHours(context, day),
+      onTap: day == null ? null : () => _editHours(context, strings, day),
     );
   }
 
-  Future<void> _editHours(BuildContext context, DayHours day) async {
+  Future<void> _editHours(
+    BuildContext context,
+    AppStrings strings,
+    DayHours day,
+  ) async {
     final open = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(
         hour: day.openMinutes ~/ 60,
         minute: day.openMinutes % 60,
       ),
-      helpText: 'Opens',
+      helpText: strings.opensAt,
     );
     if (open == null || !context.mounted) return;
     final close = await showTimePicker(
@@ -408,7 +412,7 @@ class _WeekdayRow extends ConsumerWidget {
         hour: day.closeMinutes ~/ 60,
         minute: day.closeMinutes % 60,
       ),
-      helpText: 'Closes',
+      helpText: strings.closesAt,
     );
     if (close == null) return;
     final openMinutes = open.hour * 60 + open.minute;
@@ -503,11 +507,13 @@ class _LanguagePicker extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final strings = ref.watch(appStringsProvider);
+    // Endonyms, so a picker shown in the wrong language is still readable.
     const options = {
       'system': null,
       'en': 'English',
       'zh': '中文',
       'ms': 'Bahasa Melayu',
+      'vi': 'Tiếng Việt',
     };
     return Column(
       children: [
