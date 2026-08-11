@@ -28,6 +28,10 @@ keeps the name it was stored under while the UI calls it what it is.
 - Paste, New, Filter and Sort are pinned in a bar below the Today list, where
   the hand already is and where a long list cannot scroll them out of reach.
 - WhatsApp **Ready** jumps the job to Ready; Confirm only messages the customer.
+- Swipe a name left in Customers to archive it. Archiving only hides the name —
+  the jobs and appointments carry on, because the shop still has the clothes.
+  The snackbar offers Undo, and the archive itself is one tap away in the app
+  bar, where a swipe puts the name back.
 
 Launcher icons are generated from `assets/branding/app_icon.png` (AnaCoo mark
 on black). Regenerate with `dart run flutter_launcher_icons`.
@@ -75,7 +79,7 @@ flutter run
 
 ```sh
 flutter analyze
-flutter test                     # 143 tests, no device needed
+flutter test                     # 151 tests, no device needed
 ```
 
 `test/parser_test.dart` covers the six cases the spec calls out (the exact
