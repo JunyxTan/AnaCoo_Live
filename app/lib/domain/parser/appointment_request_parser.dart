@@ -53,14 +53,23 @@ class ParsedRequest {
 }
 
 const Map<RequestField, List<String>> _labelWords = {
-  RequestField.date: ['date', 'tarikh', '日期'],
-  RequestField.time: ['time', 'masa', 'jam', 'pukul', '时间', '時間'],
-  RequestField.service: ['service', 'servis', 'perkhidmatan', '服务', '服務'],
-  RequestField.notes: ['notes', 'note', 'nota', 'catatan', 'remark', 'remarks', '备注', '備註'],
-  RequestField.name: ['name', 'nama', '姓名', '名字'],
+  RequestField.date: ['date', 'tarikh', '日期', 'ngày', 'ngay'],
+  RequestField.time: [
+    'time', 'masa', 'jam', 'pukul', '时间', '時間',
+    'giờ', 'gio', 'lúc', 'thời gian', 'thoi gian',
+  ],
+  RequestField.service: [
+    'service', 'servis', 'perkhidmatan', '服务', '服務', 'dịch vụ', 'dich vu',
+  ],
+  RequestField.notes: [
+    'notes', 'note', 'nota', 'catatan', 'remark', 'remarks', '备注', '備註',
+    'ghi chú', 'ghi chu', 'lưu ý', 'luu y',
+  ],
+  RequestField.name: ['name', 'nama', '姓名', '名字', 'tên', 'họ tên', 'ho ten'],
   RequestField.phone: [
     'phone', 'phone no', 'phone number', 'tel', 'telephone', 'telefon',
     'no telefon', 'mobile', 'hp', 'contact', 'whatsapp', '电话', '電話',
+    'điện thoại', 'dien thoai', 'số điện thoại', 'so dien thoai', 'sđt', 'sdt',
   ],
 };
 

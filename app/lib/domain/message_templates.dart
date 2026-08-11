@@ -69,11 +69,25 @@ class MessageTemplates {
           'Hai {name}, maaf — temu janji pada {date} jam {time} perlu ditukar.\n\n'
           'Masa lain yang sesuai untuk anda? Kami buka setiap hari 11pagi–10malam.',
     },
+    'vi': {
+      'confirm':
+          'Chào {name}, lịch hẹn của bạn tại AnaCoo Tailor đã được xác nhận 🙂\n\n'
+          '📅 {date}\n⏰ {time}\n🧵 {service}\n\n'
+          'R&F Princess Cove, Block A7-1. Hẹn gặp bạn!',
+      'ready':
+          'Chào {name}, {service} của bạn đã xong, mời bạn đến lấy ✨\n\n'
+          'Tổng cộng: {price}\n'
+          'Ngày lấy: {collectDate}\n\n'
+          'Chúng tôi mở cửa hằng ngày 11 giờ sáng–10 giờ tối. Cảm ơn bạn! 🙏',
+      'reschedule':
+          'Chào {name}, xin lỗi — tôi cần dời lịch hẹn ngày {date} lúc {time}.\n\n'
+          'Bạn rảnh giờ nào khác? Chúng tôi mở cửa hằng ngày 11 giờ sáng–10 giờ tối.',
+    },
   };
 
   static const MessageTemplates defaults = MessageTemplates(_defaults);
 
-  static const List<String> languages = ['en', 'zh', 'ms'];
+  static const List<String> languages = ['en', 'zh', 'ms', 'vi'];
 
   String bodyFor(TemplateKind kind, String languageCode) {
     final lang = languages.contains(languageCode) ? languageCode : 'en';

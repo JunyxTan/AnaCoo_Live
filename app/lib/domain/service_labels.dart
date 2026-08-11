@@ -3,6 +3,9 @@ import '../data/enums.dart';
 /// Display names for the service enum, matching the wording on anacoo.live so
 /// the app and the website never disagree about what a service is called.
 ///
+/// The website offers English, 中文 and Bahasa Melayu; Vietnamese is app-only,
+/// so those labels have no website counterpart to match.
+///
 /// These live in plain Dart rather than the ARB bundles because they are also
 /// needed off the widget tree — when composing notification text, and when the
 /// parser reports what it matched.
@@ -11,31 +14,37 @@ const Map<ServiceType, Map<String, String>> serviceLabels = {
     'en': 'Basic alterations',
     'zh': '日常服装修改',
     'ms': 'Ubah suai asas',
+    'vi': 'Sửa đồ cơ bản',
   },
   ServiceType.pantsJeansShortening: {
     'en': 'Pants / jeans shortening',
     'zh': '裤子 / 牛仔裤缩短',
     'ms': 'Pendekkan seluar / jeans',
+    'vi': 'Cắt lai quần / quần jean',
   },
   ServiceType.waistSizeAdjustment: {
     'en': 'Waist / size adjustment',
     'zh': '腰围 / 尺寸调整',
     'ms': 'Pelarasan pinggang / saiz',
+    'vi': 'Chỉnh eo / kích cỡ',
   },
   ServiceType.repairZipButton: {
     'en': 'Repair / zip / button',
     'zh': '修补 / 拉链 / 纽扣',
     'ms': 'Baiki / zip / butang',
+    'vi': 'Vá / khoá kéo / nút',
   },
   ServiceType.curtainsBedsheets: {
     'en': 'Curtains / bedsheets',
     'zh': '窗帘 / 床单',
     'ms': 'Langsir / cadar',
+    'vi': 'Rèm cửa / ga giường',
   },
   ServiceType.other: {
     'en': 'Other',
     'zh': '其他',
     'ms': 'Lain-lain',
+    'vi': 'Khác',
   },
 };
 
@@ -49,12 +58,21 @@ String serviceLabel(ServiceType service, String languageCode, {String? freeText}
   return label;
 }
 
+/// The last step is named for what actually happens — the customer collects the
+/// garment — rather than for the job being "done", which says nothing about who
+/// has the clothes. `JobStatus.done` keeps its name: the enum is persisted by
+/// name, and renaming it would rewrite every stored row for a wording change.
 const Map<JobStatus, Map<String, String>> jobStatusLabels = {
-  JobStatus.booked: {'en': 'Booked', 'zh': '已约', 'ms': 'Tempah'},
-  JobStatus.sewing: {'en': 'Sewing', 'zh': '制作', 'ms': 'Jahit'},
-  JobStatus.ready: {'en': 'Ready', 'zh': '待取', 'ms': 'Siap'},
-  JobStatus.done: {'en': 'Done', 'zh': '完成', 'ms': 'Selesai'},
-  JobStatus.cancelled: {'en': 'Cancel', 'zh': '取消', 'ms': 'Batal'},
+  JobStatus.booked: {'en': 'Booked', 'zh': '已约', 'ms': 'Tempah', 'vi': 'Đã đặt'},
+  JobStatus.sewing: {'en': 'Sewing', 'zh': '制作', 'ms': 'Jahit', 'vi': 'Đang may'},
+  JobStatus.ready: {'en': 'Ready', 'zh': '待取', 'ms': 'Siap', 'vi': 'Sẵn sàng'},
+  JobStatus.done: {
+    'en': 'Collected',
+    'zh': '已取件',
+    'ms': 'Diambil',
+    'vi': 'Đã lấy',
+  },
+  JobStatus.cancelled: {'en': 'Cancel', 'zh': '取消', 'ms': 'Batal', 'vi': 'Huỷ'},
 };
 
 String jobStatusLabel(JobStatus status, String languageCode) =>
@@ -63,8 +81,18 @@ String jobStatusLabel(JobStatus status, String languageCode) =>
     status.name;
 
 const Map<AppointmentType, Map<String, String>> appointmentTypeLabels = {
-  AppointmentType.dropOff: {'en': 'Drop-off', 'zh': '送件', 'ms': 'Hantar'},
-  AppointmentType.collection: {'en': 'Collection', 'zh': '取件', 'ms': 'Ambil'},
+  AppointmentType.dropOff: {
+    'en': 'Drop-off',
+    'zh': '送件',
+    'ms': 'Hantar',
+    'vi': 'Gửi đồ',
+  },
+  AppointmentType.collection: {
+    'en': 'Collection',
+    'zh': '取件',
+    'ms': 'Ambil',
+    'vi': 'Lấy đồ',
+  },
 };
 
 String appointmentTypeLabel(AppointmentType type, String languageCode) =>
@@ -73,11 +101,31 @@ String appointmentTypeLabel(AppointmentType type, String languageCode) =>
     type.name;
 
 const Map<AppointmentStatus, Map<String, String>> appointmentStatusLabels = {
-  AppointmentStatus.pending: {'en': 'Pending', 'zh': '待定', 'ms': 'Tunggu'},
-  AppointmentStatus.confirmed: {'en': 'OK', 'zh': '确认', 'ms': 'OK'},
-  AppointmentStatus.done: {'en': 'Done', 'zh': '完成', 'ms': 'Selesai'},
-  AppointmentStatus.noShow: {'en': 'No-show', 'zh': '未到', 'ms': 'Tiada'},
-  AppointmentStatus.cancelled: {'en': 'Cancel', 'zh': '取消', 'ms': 'Batal'},
+  AppointmentStatus.pending: {
+    'en': 'Pending',
+    'zh': '待定',
+    'ms': 'Tunggu',
+    'vi': 'Chờ',
+  },
+  AppointmentStatus.confirmed: {'en': 'OK', 'zh': '确认', 'ms': 'OK', 'vi': 'OK'},
+  AppointmentStatus.done: {
+    'en': 'Done',
+    'zh': '完成',
+    'ms': 'Selesai',
+    'vi': 'Hoàn tất',
+  },
+  AppointmentStatus.noShow: {
+    'en': 'No-show',
+    'zh': '未到',
+    'ms': 'Tiada',
+    'vi': 'Không đến',
+  },
+  AppointmentStatus.cancelled: {
+    'en': 'Cancel',
+    'zh': '取消',
+    'ms': 'Batal',
+    'vi': 'Huỷ',
+  },
 };
 
 String appointmentStatusLabel(AppointmentStatus status, String languageCode) =>

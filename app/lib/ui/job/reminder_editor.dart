@@ -85,9 +85,10 @@ class ReminderSummary extends ConsumerWidget {
 /// Human-readable description of a rule, in the UI language.
 String describeRule(ReminderRule rule, String languageCode) {
   final formats = Formats(languageCode);
-  String pick(String en, String zh, String ms) => switch (languageCode) {
+  String pick(String en, String zh, String ms, String vi) => switch (languageCode) {
         'zh' => zh,
         'ms' => ms,
+        'vi' => vi,
         _ => en,
       };
 
@@ -95,25 +96,31 @@ String describeRule(ReminderRule rule, String languageCode) {
     RelativeReminder(:final before) => () {
         if (before.inMinutes % 1440 == 0 && before.inMinutes != 0) {
           final d = before.inDays;
-          return pick('-$d d', '-$d 天', '-$d h');
+          return pick('-$d d', '-$d 天', '-$d h', '-$d ngày');
         }
         if (before.inMinutes % 60 == 0) {
           final h = before.inHours;
-          return pick('-$h h', '-$h 小时', '-$h jam');
+          return pick('-$h h', '-$h 小时', '-$h jam', '-$h giờ');
         }
         return pick(
           '-${before.inMinutes} m',
           '-${before.inMinutes} 分',
           '-${before.inMinutes} min',
+          '-${before.inMinutes} phút',
         );
       }(),
     DaysBeforeAtReminder(:final days, :final hour, :final minute) => () {
         final clock = formats.minutesAsClock(hour * 60 + minute);
-        if (days == 0) return pick('$clock', '$clock', '$clock');
+        if (days == 0) return clock;
         if (days == 1) {
-          return pick('−1d $clock', '前天 $clock', '−1h $clock');
+          return pick('−1d $clock', '前天 $clock', '−1h $clock', '−1 ngày $clock');
         }
-        return pick('−${days}d $clock', '−$days天 $clock', '−${days}h $clock');
+        return pick(
+          '−${days}d $clock',
+          '−$days天 $clock',
+          '−${days}h $clock',
+          '−$days ngày $clock',
+        );
       }(),
   };
 }

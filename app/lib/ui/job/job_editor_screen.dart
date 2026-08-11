@@ -31,6 +31,7 @@ class JobEditorScreen extends ConsumerStatefulWidget {
     this.parsed,
     this.seedCollectionAt,
     this.onSaved,
+    this.onDeleted,
   });
 
   /// Editing an existing job.
@@ -48,6 +49,10 @@ class JobEditorScreen extends ConsumerStatefulWidget {
   final tz.TZDateTime? seedCollectionAt;
 
   final void Function(int jobId)? onSaved;
+
+  /// Called just before the screen closes on a delete, so the page underneath
+  /// can close too rather than show a job that is gone.
+  final VoidCallback? onDeleted;
 
   @override
   ConsumerState<JobEditorScreen> createState() => _JobEditorScreenState();
@@ -231,6 +236,20 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
               icon: const Icon(Icons.check),
               label: Text(strings.save),
             ),
+            // Well below Save, and only for a job that exists: the one
+            // irreversible action on this page should be hard to hit by
+            // accident.
+            if (widget.jobId != null) ...[
+              const SizedBox(height: 32),
+              TextButton.icon(
+                onPressed: _saving ? null : _confirmDelete,
+                icon: const Icon(Icons.delete_outline),
+                label: Text(strings.delete),
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -463,6 +482,37 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
     setState(() => _saving = false);
     widget.onSaved?.call(jobId);
     Navigator.of(context).pop(jobId);
+  }
+
+  Future<void> _confirmDelete() async {
+    final jobId = widget.jobId;
+    if (jobId == null) return;
+    final strings = ref.read(appStringsProvider);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: Text(strings.deleteJobConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(strings.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(strings.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    // Block Save while the delete runs, so a double tap cannot resurrect the
+    // job it just removed.
+    setState(() => _saving = true);
+    await ref.read(jobRepositoryProvider).deleteJob(jobId);
+    if (!mounted) return;
+    widget.onDeleted?.call();
+    Navigator.of(context).pop();
   }
 }
 

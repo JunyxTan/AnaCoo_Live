@@ -59,11 +59,14 @@ const Map<String, int> _monthNames = {
   'dec': 12, 'december': 12, 'dis': 12, 'disember': 12,
 };
 
-/// `today` / `tomorrow` / `the day after` in the three UI languages.
+/// `today` / `tomorrow` / `the day after` in the UI languages.
 const Map<String, int> _relativeDays = {
   'today': 0, 'hari ini': 0, 'harini': 0, '今天': 0, '今日': 0,
+  'hôm nay': 0, 'hom nay': 0,
   'tomorrow': 1, 'tmr': 1, 'tmrw': 1, 'esok': 1, 'besok': 1, '明天': 1, '明日': 1,
+  'ngày mai': 1, 'ngay mai': 1, 'mai': 1,
   'day after tomorrow': 2, 'lusa': 2, '后天': 2, '後天': 2,
+  'ngày kia': 2, 'ngay kia': 2, 'ngày mốt': 2, 'ngay mot': 2, 'mốt': 2,
 };
 
 final RegExp _isoDate = RegExp(r'(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})');
@@ -72,6 +75,14 @@ final RegExp _isoDate = RegExp(r'(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})');
 final RegExp _dayFirstDate = RegExp(r'(\d{1,2})[-/.](\d{1,2})(?:[-/.](\d{2,4}))?');
 
 final RegExp _cjkDate = RegExp(r'(?:(\d{4})\s*年\s*)?(\d{1,2})\s*月\s*(\d{1,2})\s*日?');
+
+/// `6 tháng 8`, `6 thg 8 2026`, `ngày 6 tháng 8 năm 2026`. Vietnamese numbers
+/// its months behind a keyword instead of naming them, so the Latin
+/// month-name patterns below never see it.
+final RegExp _vietnameseDate = RegExp(
+  r'(\d{1,2})\s*(?:th[áa]ng|thg)\.?\s*(\d{1,2})(?:\s*(?:n[ăa]m\s*)?(\d{4}))?',
+  caseSensitive: false,
+);
 
 final RegExp _dayMonthName = RegExp(
   r'(\d{1,2})\s*(?:st|nd|rd|th)?[\s.,-]+([A-Za-z]{3,9})\.?(?:[\s.,-]+(\d{2,4}))?',
@@ -108,6 +119,15 @@ ParsedDate? parseDate(String input, {required DateTime today}) {
   if (cjk != null) {
     final year = cjk.group(1) == null ? today.year : int.parse(cjk.group(1)!);
     return _validate(year, int.parse(cjk.group(2)!), int.parse(cjk.group(3)!));
+  }
+
+  final vietnamese = _vietnameseDate.firstMatch(text);
+  if (vietnamese != null) {
+    return _validate(
+      _expandYear(vietnamese.group(3), today),
+      int.parse(vietnamese.group(2)!),
+      int.parse(vietnamese.group(1)!),
+    );
   }
 
   final iso = _isoDate.firstMatch(text);
@@ -175,13 +195,23 @@ ParsedDate? _validate(int year, int month, int day) {
 
 const Map<String, bool> _meridiemPm = {
   'am': false, 'a m': false, 'pagi': false, '上午': false, '早上': false, '凌晨': false,
+  'sáng': false, 'sang': false,
   'pm': true, 'p m': true, 'petang': true, 'malam': true, 'tengahari': true,
   'tengah hari': true, '下午': true, '晚上': true, '中午': true, '傍晚': true,
+  'chiều': true, 'chieu': true, 'tối': true, 'toi': true, 'trưa': true,
+  'trua': true, 'đêm': true,
 };
 
 final RegExp _separatedTime = RegExp(r'(\d{1,2})\s*[:.：h]\s*(\d{2})');
 final RegExp _bareHourWithMeridiem = RegExp(
   r'(\d{1,2})\s*(am|pm|a\.m\.|p\.m\.)',
+  caseSensitive: false,
+);
+
+/// `8h`, `20 h` — Vietnamese marks a whole hour with a trailing `h` and no
+/// minutes. The negative lookahead keeps it off English words like `8 hours`.
+final RegExp _hourMarkerOnly = RegExp(
+  r'(?<!\d)(\d{1,2})\s*h(?![a-z0-9])',
   caseSensitive: false,
 );
 final RegExp _fourDigitTime = RegExp(r'\b(\d{4})\b');
@@ -219,6 +249,11 @@ ParsedTime? parseTime(String input, {bool allowBareDigits = true}) {
   final bare = _bareHourWithMeridiem.firstMatch(text);
   if (bare != null) {
     return _buildTime(int.parse(bare.group(1)!), 0, pm ?? true);
+  }
+
+  final hourMarker = _hourMarkerOnly.firstMatch(text);
+  if (hourMarker != null) {
+    return _buildTime(int.parse(hourMarker.group(1)!), 0, pm);
   }
 
   // "8 malam", "11 pagi", "下午 3" — the meridiem word is detached from the
