@@ -151,8 +151,15 @@ class _Body extends ConsumerWidget {
         SectionHeader(strings.messageTemplates, icon: Icons.chat_outlined),
         ListTile(
           contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.chat_outlined),
-          title: Text(strings.messageTemplates),
+          // The section header already says Templates; the row is worth more
+          // saying which ones are in there.
+          title: Text(
+            [
+              strings.whatsappConfirm,
+              strings.whatsappReady,
+              strings.whatsappReschedule,
+            ].join(' · '),
+          ),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(builder: (_) => const TemplatesScreen()),

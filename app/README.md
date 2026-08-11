@@ -79,7 +79,7 @@ flutter run
 
 ```sh
 flutter analyze
-flutter test                     # 151 tests, no device needed
+flutter test                     # 153 tests, no device needed
 ```
 
 `test/parser_test.dart` covers the six cases the spec calls out (the exact
