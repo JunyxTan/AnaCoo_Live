@@ -9,7 +9,11 @@ No backend, no login, no network required for anything the app does.
 
 ## How work moves (v2)
 
-Pipeline is four steps: **Booked → Sewing → Ready → Collected**.
+Pipeline is five steps: **Booked → Received → Sewing → Ready → Collected**.
+
+Received is the garment being handed over, which happens on its own day and is
+worth knowing about separately from the work having started. Reaching it marks
+the drop-off appointment done.
 
 The last step is `JobStatus.done` in code — the enum is persisted by name, so it
 keeps the name it was stored under while the UI calls it what it is.
@@ -69,7 +73,7 @@ flutter run
 
 ```sh
 flutter analyze
-flutter test                     # 139 tests, no device needed
+flutter test                     # 140 tests, no device needed
 ```
 
 `test/parser_test.dart` covers the six cases the spec calls out (the exact

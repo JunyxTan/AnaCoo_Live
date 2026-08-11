@@ -131,6 +131,23 @@ void main() {
       expect((await db.getJob(jobId)).readyAt, isNull);
     });
 
+    test('received closes the drop-off, and so does skipping past it', () async {
+      final jobId = await repository.save(draft());
+
+      await repository.setStatus(jobId, JobStatus.received);
+      expect(
+        (await db.appointmentOf(jobId, AppointmentType.dropOff))!.status,
+        AppointmentStatus.done,
+      );
+
+      final skipped = await repository.save(draft());
+      await repository.setStatus(skipped, JobStatus.ready);
+      expect(
+        (await db.appointmentOf(skipped, AppointmentType.dropOff))!.status,
+        AppointmentStatus.done,
+      );
+    });
+
     test('done closes both appointments', () async {
       final jobId = await repository.save(
         draft()..collection = AppointmentDraft(at: shopDateTime(2026, 8, 9, 15, 0)),
@@ -199,9 +216,13 @@ void main() {
       );
     });
 
-    test('advance walks booked → sewing → ready → done without auto collection',
-        () async {
+    test(
+        'advance walks booked → received → sewing → ready → done without auto '
+        'collection', () async {
       final jobId = await repository.save(draft());
+
+      expect(await repository.advance(jobId), JobStatus.received);
+      expect((await db.getJob(jobId)).status, JobStatus.received);
 
       expect(await repository.advance(jobId), JobStatus.sewing);
       expect((await db.getJob(jobId)).status, JobStatus.sewing);

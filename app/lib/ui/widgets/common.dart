@@ -467,6 +467,7 @@ class StatusStepper extends StatelessWidget {
 
   static IconData iconFor(JobStatus status) => switch (status) {
         JobStatus.booked => Icons.event_available_outlined,
+        JobStatus.received => Icons.move_to_inbox_outlined,
         JobStatus.sewing => Icons.content_cut,
         JobStatus.ready => Icons.inventory_2_outlined,
         JobStatus.done => Icons.done_all,

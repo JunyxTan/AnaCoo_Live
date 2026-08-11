@@ -74,12 +74,13 @@ class AppDatabase extends _$AppDatabase {
     },
     onUpgrade: (m, from, to) async {
       if (from < 2) {
-        // Collapse the six-step pipeline onto four statuses.
+        // Collapse the six-step pipeline. `received` survives as itself — the
+        // step is back, meaning the same thing it always did — so only the
+        // names with no home left are rewritten.
         await customStatement('''
 UPDATE jobs SET status = CASE status
   WHEN 'requested' THEN 'booked'
   WHEN 'confirmed' THEN 'booked'
-  WHEN 'received' THEN 'sewing'
   WHEN 'inProgress' THEN 'sewing'
   WHEN 'collected' THEN 'done'
   ELSE status

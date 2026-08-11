@@ -64,6 +64,12 @@ String serviceLabel(ServiceType service, String languageCode, {String? freeText}
 /// name, and renaming it would rewrite every stored row for a wording change.
 const Map<JobStatus, Map<String, String>> jobStatusLabels = {
   JobStatus.booked: {'en': 'Booked', 'zh': '已约', 'ms': 'Tempah', 'vi': 'Đã đặt'},
+  JobStatus.received: {
+    'en': 'Received',
+    'zh': '已收',
+    'ms': 'Terima',
+    'vi': 'Đã nhận',
+  },
   JobStatus.sewing: {'en': 'Sewing', 'zh': '制作', 'ms': 'Jahit', 'vi': 'Đang may'},
   JobStatus.ready: {'en': 'Ready', 'zh': '待取', 'ms': 'Siap', 'vi': 'Sẵn sàng'},
   JobStatus.done: {
