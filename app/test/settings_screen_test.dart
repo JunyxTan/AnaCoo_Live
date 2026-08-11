@@ -80,4 +80,29 @@ void main() {
     expect(find.byType(TemplatesScreen), findsOneWidget);
     await unmount(tester);
   });
+
+  testWidgets('slot, turnaround and language are picked from a dropdown',
+      (tester) async {
+    await pumpSettings(tester);
+
+    // Closed controls show the current value; the old bottom-sheet list of
+    // every option is gone, and so is the five-row language stack.
+    expect(find.text('30 min'), findsOneWidget);
+    expect(find.text('English'), findsOneWidget);
+    expect(find.text('Bahasa Melayu'), findsNothing);
+    expect(find.byType(DropdownButton<String>), findsOneWidget);
+
+    await tester.tap(find.text('30 min'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('45 min').last);
+    await tester.pumpAndSettle();
+    expect((await db.loadSettings()).slotMinutes, 45);
+
+    await tester.tap(find.text('English'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bahasa Melayu').last);
+    await tester.pumpAndSettle();
+    expect((await db.loadSettings()).languageCode, 'ms');
+    await unmount(tester);
+  });
 }
