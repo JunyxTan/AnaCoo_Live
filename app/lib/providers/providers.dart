@@ -184,6 +184,14 @@ final customersProvider =
   return ref.watch(databaseProvider).watchCustomers(query: query);
 });
 
+/// The archived side of the directory, for putting a customer back.
+final archivedCustomersProvider =
+    StreamProvider.family<List<Customer>, String>((ref, query) {
+  return ref
+      .watch(databaseProvider)
+      .watchCustomers(query: query, archived: true);
+});
+
 final customerJobCountsProvider = FutureProvider<Map<int, int>>(
   (ref) => ref.watch(databaseProvider).jobCountsByCustomer(),
 );

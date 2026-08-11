@@ -64,7 +64,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -89,6 +89,9 @@ END
       }
       if (from < 3) {
         await m.createTable(jobPhotos);
+      }
+      if (from < 4) {
+        await m.addColumn(customers, customers.archivedAt);
       }
     },
     beforeOpen: (details) async {
@@ -127,8 +130,17 @@ END
 
   // --------------------------------------------------------------- customers
 
-  Stream<List<Customer>> watchCustomers({String query = ''}) {
+  /// The customer directory, name-ordered.
+  ///
+  /// Archived customers are a separate list rather than a flag on the rows:
+  /// every caller wants one side or the other, and the directory asking for
+  /// "customers" should never have to remember to exclude them.
+  Stream<List<Customer>> watchCustomers({
+    String query = '',
+    bool archived = false,
+  }) {
     final q = select(customers)
+      ..where((t) => archived ? t.archivedAt.isNotNull() : t.archivedAt.isNull())
       ..orderBy([(t) => OrderingTerm(expression: t.name)]);
     final needle = query.trim();
     if (needle.isNotEmpty) {
@@ -142,6 +154,18 @@ END
     }
     return q.watch();
   }
+
+  /// Hides a customer from the directory, or puts them back.
+  Future<void> setCustomerArchived(
+    int id,
+    bool archived, {
+    DateTime? now,
+  }) =>
+      (update(customers)..where((t) => t.id.equals(id))).write(
+        CustomersCompanion(
+          archivedAt: Value(archived ? (now ?? DateTime.now()).toUtc() : null),
+        ),
+      );
 
   Future<Customer?> findCustomerByPhone(String phone) {
     final digits = phone.replaceAll(RegExp(r'\D'), '');

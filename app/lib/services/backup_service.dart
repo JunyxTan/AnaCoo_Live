@@ -55,6 +55,7 @@ class BackupService {
             'whatsappNumber': c.whatsappNumber,
             'notes': c.notes,
             'createdAt': c.createdAt.toUtc().toIso8601String(),
+            'archivedAt': c.archivedAt?.toUtc().toIso8601String(),
           },
       ],
       'jobs': [
@@ -220,6 +221,7 @@ class BackupService {
                 whatsappNumber: Value(_string(raw['whatsappNumber'])),
                 notes: Value(_string(raw['notes'])),
                 createdAt: _date(raw['createdAt']) ?? DateTime.now().toUtc(),
+                archivedAt: Value(_date(raw['archivedAt'])),
               ),
             );
       }
