@@ -25,6 +25,8 @@ keeps the name it was stored under while the UI calls it what it is.
   turnaround setting). It is never created automatically.
 - Today tiles have a **Next** button that advances the job one step. Collected
   closes any open appointments.
+- Paste, New, Filter and Sort are pinned in a bar below the Today list, where
+  the hand already is and where a long list cannot scroll them out of reach.
 - WhatsApp **Ready** jumps the job to Ready; Confirm only messages the customer.
 
 Launcher icons are generated from `assets/branding/app_icon.png` (AnaCoo mark
@@ -73,7 +75,7 @@ flutter run
 
 ```sh
 flutter analyze
-flutter test                     # 140 tests, no device needed
+flutter test                     # 143 tests, no device needed
 ```
 
 `test/parser_test.dart` covers the six cases the spec calls out (the exact
