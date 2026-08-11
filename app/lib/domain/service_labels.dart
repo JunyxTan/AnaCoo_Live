@@ -58,11 +58,20 @@ String serviceLabel(ServiceType service, String languageCode, {String? freeText}
   return label;
 }
 
+/// The last step is named for what actually happens — the customer collects the
+/// garment — rather than for the job being "done", which says nothing about who
+/// has the clothes. `JobStatus.done` keeps its name: the enum is persisted by
+/// name, and renaming it would rewrite every stored row for a wording change.
 const Map<JobStatus, Map<String, String>> jobStatusLabels = {
   JobStatus.booked: {'en': 'Booked', 'zh': '已约', 'ms': 'Tempah', 'vi': 'Đã đặt'},
   JobStatus.sewing: {'en': 'Sewing', 'zh': '制作', 'ms': 'Jahit', 'vi': 'Đang may'},
   JobStatus.ready: {'en': 'Ready', 'zh': '待取', 'ms': 'Siap', 'vi': 'Sẵn sàng'},
-  JobStatus.done: {'en': 'Done', 'zh': '完成', 'ms': 'Selesai', 'vi': 'Hoàn tất'},
+  JobStatus.done: {
+    'en': 'Collected',
+    'zh': '已取件',
+    'ms': 'Diambil',
+    'vi': 'Đã lấy',
+  },
   JobStatus.cancelled: {'en': 'Cancel', 'zh': '取消', 'ms': 'Batal', 'vi': 'Huỷ'},
 };
 

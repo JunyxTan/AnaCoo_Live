@@ -68,6 +68,20 @@ void main() {
     });
   });
 
+  test('the pipeline ends at collected rather than a bare "done"', () {
+    expect(jobStatusLabel(JobStatus.done, 'en'), 'Collected');
+    // Both appear on the job page, and they mean different things: the
+    // appointment happened, versus the customer has their clothes back. If the
+    // two ever read the same the page stops making sense.
+    for (final language in languages) {
+      expect(
+        jobStatusLabels[JobStatus.done]?[language],
+        isNot(appointmentStatusLabels[AppointmentStatus.done]?[language]),
+        reason: language,
+      );
+    }
+  });
+
   group('Vietnamese', () {
     const vi = AppStrings('vi');
 

@@ -9,15 +9,18 @@ No backend, no login, no network required for anything the app does.
 
 ## How work moves (v2)
 
-Pipeline is four steps: **Booked → Sewing → Ready → Done**.
+Pipeline is four steps: **Booked → Sewing → Ready → Collected**.
+
+The last step is `JobStatus.done` in code — the enum is persisted by name, so it
+keeps the name it was stored under while the UI calls it what it is.
 
 - **Paste** a complete WhatsApp request (name + phone + date + time) and the
   job is saved immediately — no editor, no detail screen. Incomplete requests
   still open a short form.
 - Collection is optional: add it later from the job editor (Suggested uses the
   turnaround setting). It is never created automatically.
-- Today tiles have a **Next** button that advances the job one step. Done closes
-  any open appointments.
+- Today tiles have a **Next** button that advances the job one step. Collected
+  closes any open appointments.
 - WhatsApp **Ready** jumps the job to Ready; Confirm only messages the customer.
 
 Launcher icons are generated from `assets/branding/app_icon.png` (AnaCoo mark
@@ -66,7 +69,7 @@ flutter run
 
 ```sh
 flutter analyze
-flutter test                     # 138 tests, no device needed
+flutter test                     # 139 tests, no device needed
 ```
 
 `test/parser_test.dart` covers the six cases the spec calls out (the exact
