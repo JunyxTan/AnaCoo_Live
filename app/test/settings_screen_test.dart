@@ -1,8 +1,10 @@
 import 'package:anacoo_tailor/core/theme.dart';
 import 'package:anacoo_tailor/data/database.dart';
+import 'package:anacoo_tailor/domain/notification_plan.dart';
 import 'package:anacoo_tailor/domain/shop_time.dart';
 import 'package:anacoo_tailor/l10n/app_strings.dart';
 import 'package:anacoo_tailor/providers/providers.dart';
+import 'package:anacoo_tailor/services/notification_service.dart';
 import 'package:anacoo_tailor/ui/settings/settings_screen.dart';
 import 'package:anacoo_tailor/ui/settings/templates_screen.dart';
 import 'package:drift/drift.dart' show Value;
@@ -10,6 +12,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+/// Keeps the scheduler happy without touching a platform channel.
+class _SilentNotifications extends NotificationService {
+  @override
+  Future<NotificationCapabilities> capabilities() async =>
+      const NotificationCapabilities(
+        notificationsAllowed: true,
+        exactAlarmsAllowed: true,
+        maxPending: 64,
+      );
+
+  @override
+  Future<void> schedule({
+    required int id,
+    required PlannedNotification notification,
+    required bool useExactAlarms,
+  }) async {}
+
+  @override
+  Future<void> cancel(int id) async {}
+
+  @override
+  Future<void> cancelAll() async {}
+}
 
 void main() {
   initShopTime();
@@ -29,7 +55,10 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [databaseProvider.overrideWithValue(db)],
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          notificationServiceProvider.overrideWithValue(_SilentNotifications()),
+        ],
         child: MaterialApp(
           theme: AnacooTheme.light(),
           locale: const Locale('en'),
@@ -78,6 +107,31 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(TemplatesScreen), findsOneWidget);
+    await unmount(tester);
+  });
+
+  testWidgets('slot, turnaround and language are picked from a dropdown',
+      (tester) async {
+    await pumpSettings(tester);
+
+    // Closed controls show the current value; the old bottom-sheet list of
+    // every option is gone, and so is the five-row language stack.
+    expect(find.text('30 min'), findsOneWidget);
+    expect(find.text('English'), findsOneWidget);
+    expect(find.text('Bahasa Melayu'), findsNothing);
+    expect(find.byType(DropdownButton<String>), findsOneWidget);
+
+    await tester.tap(find.text('30 min'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('45 min').last);
+    await tester.pumpAndSettle();
+    expect((await db.loadSettings()).slotMinutes, 45);
+
+    await tester.tap(find.text('English'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bahasa Melayu').last);
+    await tester.pumpAndSettle();
+    expect((await db.loadSettings()).languageCode, 'ms');
     await unmount(tester);
   });
 }

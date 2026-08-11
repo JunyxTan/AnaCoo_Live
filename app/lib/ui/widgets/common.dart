@@ -34,10 +34,15 @@ class SectionHeader extends StatelessWidget {
             Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
             const SizedBox(width: 8),
           ],
-          Text(
-            title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+          // Title takes what is left after the trailing control, so a language
+          // dropdown cannot shove "Language" off a narrow phone.
+          Expanded(
+            child: Text(
+              title,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           if (count != null) ...[
@@ -51,8 +56,10 @@ class SectionHeader extends StatelessWidget {
               child: Text('$count', style: theme.textTheme.labelMedium),
             ),
           ],
-          const Spacer(),
-          ?trailing,
+          if (trailing != null) ...[
+            const SizedBox(width: 8),
+            trailing!,
+          ],
         ],
       ),
     );

@@ -89,20 +89,13 @@ class _Body extends ConsumerWidget {
             AppSettingsCompanion(overdueNudgesEnabled: Value(value)),
           ),
         ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(strings.readyNudgeAfter),
-          trailing: Text(strings.days(settings.readyNudgeDays)),
-          onTap: () => _pickNumber(
-            context,
-            ref,
-            title: strings.readyNudgeAfter,
-            current: settings.readyNudgeDays,
-            min: 1,
-            max: 30,
-            onPicked: (value) =>
-                _save(ref, AppSettingsCompanion(readyNudgeDays: Value(value))),
-          ),
+        _ChoiceRow<int>(
+          title: strings.readyNudgeAfter,
+          value: settings.readyNudgeDays,
+          options: _choices(1, 30, including: settings.readyNudgeDays),
+          labelOf: strings.days,
+          onPicked: (value) =>
+              _save(ref, AppSettingsCompanion(readyNudgeDays: Value(value))),
         ),
         SectionHeader(strings.workingHours, icon: Icons.access_time),
         for (var weekday = 1; weekday <= 7; weekday++)
@@ -113,37 +106,26 @@ class _Body extends ConsumerWidget {
             onChanged: (next) =>
                 _save(ref, AppSettingsCompanion(workingHours: Value(next.encode()))),
           ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(strings.slotLength),
-          trailing: Text(strings.minutesShort(settings.slotMinutes)),
-          onTap: () => _pickNumber(
-            context,
-            ref,
-            title: strings.slotLength,
-            current: settings.slotMinutes,
-            min: 5,
-            max: 120,
-            step: 5,
-            onPicked: (value) =>
-                _save(ref, AppSettingsCompanion(slotMinutes: Value(value))),
-          ),
+        _ChoiceRow<int>(
+          title: strings.slotLength,
+          value: settings.slotMinutes,
+          options: _choices(5, 120, step: 5, including: settings.slotMinutes),
+          labelOf: strings.minutesShort,
+          onPicked: (value) =>
+              _save(ref, AppSettingsCompanion(slotMinutes: Value(value))),
         ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(strings.turnaroundDays),
-          trailing: Text(strings.days(settings.defaultTurnaroundDays)),
-          onTap: () => _pickNumber(
-            context,
+        _ChoiceRow<int>(
+          title: strings.turnaroundDays,
+          value: settings.defaultTurnaroundDays,
+          options: _choices(
+            0,
+            60,
+            including: settings.defaultTurnaroundDays,
+          ),
+          labelOf: strings.days,
+          onPicked: (value) => _save(
             ref,
-            title: strings.turnaroundDays,
-            current: settings.defaultTurnaroundDays,
-            min: 0,
-            max: 60,
-            onPicked: (value) => _save(
-              ref,
-              AppSettingsCompanion(defaultTurnaroundDays: Value(value)),
-            ),
+            AppSettingsCompanion(defaultTurnaroundDays: Value(value)),
           ),
         ),
         SectionHeader(strings.blockedDates, icon: Icons.event_busy_outlined),
@@ -165,8 +147,23 @@ class _Body extends ConsumerWidget {
             MaterialPageRoute<void>(builder: (_) => const TemplatesScreen()),
           ),
         ),
-        SectionHeader(strings.language, icon: Icons.language),
-        _LanguagePicker(current: settings.languageCode),
+        SectionHeader(
+          strings.language,
+          icon: Icons.language,
+          // One line rather than a row per language: the section already names
+          // itself, so a row saying Language under it would only repeat it.
+          trailing: _ChoiceDropdown<String>(
+            value: _languageNames.containsKey(settings.languageCode)
+                ? settings.languageCode
+                // Unknown code from an old backup. The app already falls back
+                // to the device language, so say so rather than assert.
+                : 'system',
+            options: _languageNames.keys.toList(),
+            labelOf: (code) => _languageNames[code] ?? strings.systemLanguage,
+            onPicked: (code) =>
+                _save(ref, AppSettingsCompanion(languageCode: Value(code))),
+          ),
+        ),
         SectionHeader(strings.exportBackup, icon: Icons.ios_share),
         const _BackupSection(),
       ],
@@ -215,41 +212,105 @@ class _Body extends ConsumerWidget {
     );
   }
 
-  Future<void> _pickNumber(
-    BuildContext context,
-    WidgetRef ref, {
-    required String title,
-    required int current,
-    required int min,
-    required int max,
+  /// `min`..`max` in steps of [step], always containing [including].
+  ///
+  /// A restored backup can hold a value the steps miss — a dropdown whose
+  /// current value is not one of its own options throws, so it is folded in.
+  static List<int> _choices(
+    int min,
+    int max, {
     int step = 1,
-    required ValueChanged<int> onPicked,
-  }) async {
-    final options = [
+    required int including,
+  }) {
+    final options = {
       for (var value = min; value <= max; value += step) value,
-    ];
-    final picked = await showModalBottomSheet<int>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(title, style: Theme.of(context).textTheme.titleMedium),
-            ),
-            for (final value in options)
-              ListTile(
-                title: Text('$value'),
-                trailing: value == current ? const Icon(Icons.check) : null,
-                selected: value == current,
-                onTap: () => Navigator.of(context).pop(value),
-              ),
-          ],
+      including,
+    }.toList()
+      ..sort();
+    return options;
+  }
+}
+
+/// The languages, by their own names, so a picker read in the wrong language is
+/// still readable. `system` follows the device.
+const Map<String, String?> _languageNames = {
+  'system': null,
+  'en': 'English',
+  'zh': '中文',
+  'ms': 'Bahasa Melayu',
+  'vi': 'Tiếng Việt',
+};
+
+/// A settings row whose value is one of a fixed set.
+class _ChoiceRow<T> extends StatelessWidget {
+  const _ChoiceRow({
+    required this.title,
+    required this.value,
+    required this.options,
+    required this.labelOf,
+    required this.onPicked,
+  });
+
+  final String title;
+  final T value;
+  final List<T> options;
+  final String Function(T) labelOf;
+  final ValueChanged<T> onPicked;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(title),
+        trailing: _ChoiceDropdown<T>(
+          value: value,
+          options: options,
+          labelOf: labelOf,
+          onPicked: onPicked,
         ),
-      ),
+      );
+}
+
+/// The value itself, picked in place: it opens where it sits and shows the
+/// choice it is showing now, so the current setting is never a screen away.
+class _ChoiceDropdown<T> extends StatelessWidget {
+  const _ChoiceDropdown({
+    required this.value,
+    required this.options,
+    required this.labelOf,
+    required this.onPicked,
+  });
+
+  final T value;
+  final List<T> options;
+  final String Function(T) labelOf;
+  final ValueChanged<T> onPicked;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Without [selectedItemBuilder], the closed control is as wide as the
+    // longest menu item — "Bahasa Melayu" would pad every language row.
+    // Keep the builders as plain Text widgets: an Align expands to the max
+    // constraint and then the button's own row overflows by the icon width.
+    return DropdownButton<T>(
+      value: value,
+      // The row is the control; the dropdown is only its value.
+      underline: const SizedBox.shrink(),
+      isDense: true,
+      borderRadius: BorderRadius.circular(12),
+      style: theme.textTheme.bodyLarge,
+      alignment: AlignmentDirectional.centerEnd,
+      selectedItemBuilder: (context) => [
+        for (final option in options) Text(labelOf(option)),
+      ],
+      items: [
+        for (final option in options)
+          DropdownMenuItem<T>(value: option, child: Text(labelOf(option))),
+      ],
+      onChanged: (next) {
+        if (next != null) onPicked(next);
+      },
     );
-    if (picked != null) onPicked(picked);
   }
 }
 
@@ -503,40 +564,6 @@ class _BlockedDatesList extends ConsumerWidget {
           dayKey(shopDateTime(picked.year, picked.month, picked.day)),
           reason.trim().isEmpty ? null : reason.trim(),
         );
-  }
-}
-
-class _LanguagePicker extends ConsumerWidget {
-  const _LanguagePicker({required this.current});
-
-  final String current;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final strings = ref.watch(appStringsProvider);
-    // Endonyms, so a picker shown in the wrong language is still readable.
-    const options = {
-      'system': null,
-      'en': 'English',
-      'zh': '中文',
-      'ms': 'Bahasa Melayu',
-      'vi': 'Tiếng Việt',
-    };
-    return Column(
-      children: [
-        for (final entry in options.entries)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(entry.value ?? strings.systemLanguage),
-            trailing: entry.key == current ? const Icon(Icons.check) : null,
-            selected: entry.key == current,
-            onTap: () => ref
-                .read(databaseProvider)
-                .saveSettings(AppSettingsCompanion(languageCode: Value(entry.key)))
-                .then((_) => ref.read(schedulerProvider).rebuild()),
-          ),
-      ],
-    );
   }
 }
 
