@@ -82,6 +82,7 @@ const Set<String> _emptyValueSentinels = {
   'n a', 'na', 'nil', 'none', 'null', 'nothing',
   'tiada', 'takde', 'kosong',
   '无', '沒有', '没有', '无备注', '沒有備註',
+  'không', 'khong', 'không có', 'khong co', 'trống',
 };
 
 /// Normalises a captured field value, collapsing placeholder dashes to null.

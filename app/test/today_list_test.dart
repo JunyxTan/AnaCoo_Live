@@ -86,8 +86,9 @@ void main() {
   }
 
   group('AppStrings list labels', () {
-    test('cover every filter and sort in all three languages', () {
-      for (final language in ['en', 'zh', 'ms']) {
+    test('cover every filter and sort in every language', () {
+      for (final locale in AppStrings.supportedLocales) {
+        final language = locale.languageCode;
         final strings = AppStrings(language);
         for (final filter in AppointmentFilter.values) {
           expect(strings.appointmentFilterLabel(filter), isNotEmpty);

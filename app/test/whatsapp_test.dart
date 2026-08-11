@@ -61,7 +61,7 @@ void main() {
   });
 
   group('message templates', () {
-    test('ship a full set for all three languages', () {
+    test('ship a full set for every language', () {
       for (final language in MessageTemplates.languages) {
         for (final kind in TemplateKind.values) {
           expect(

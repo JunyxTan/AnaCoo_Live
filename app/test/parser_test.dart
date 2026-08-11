@@ -194,6 +194,63 @@ Thank you! 🙏''';
     });
   });
 
+  group('Vietnamese', () {
+    test('reads the labels, even typed without diacritics', () {
+      const message = '''
+📅 Ngày: 6/8/2026
+⏰ Giờ: 12:00 PM
+🧵 Dịch vụ: Cắt lai quần / quần jean
+📝 Ghi chú: không
+👤 Tên: Nguyễn Thị Mai
+📞 Số điện thoại: +60123456789''';
+
+      final result = parseAppointmentRequest(message, today: today);
+      expect(result!.date, const ParsedDate(2026, 8, 6));
+      expect(result.time, const ParsedTime(12, 0));
+      expect(result.service?.service, ServiceType.pantsJeansShortening);
+      expect(result.notes, isNull);
+      expect(result.customerName, 'Nguyễn Thị Mai');
+      expect(result.phone, '+60123456789');
+
+      const bare = '''
+Ngay: 6/8/2026
+Gio: 12:00 PM
+Dich vu: sua khoa keo
+SDT: +60123456789''';
+      final plain = parseAppointmentRequest(bare, today: today);
+      expect(plain!.date, const ParsedDate(2026, 8, 6));
+      expect(plain.service?.service, ServiceType.repairZipButton);
+    });
+
+    test('reads a month spelled out behind tháng', () {
+      expect(parseDate('6 tháng 8', today: today), const ParsedDate(2026, 8, 6));
+      expect(
+        parseDate('ngày 6 tháng 8 năm 2026', today: today),
+        const ParsedDate(2026, 8, 6),
+      );
+      expect(parseDate('6 thg 3 2026', today: today), const ParsedDate(2026, 3, 6));
+    });
+
+    test('reads hôm nay, mai and ngày kia', () {
+      expect(parseDate('hôm nay', today: today), const ParsedDate(2026, 8, 1));
+      expect(parseDate('ngày mai', today: today), const ParsedDate(2026, 8, 2));
+      expect(parseDate('mai', today: today), const ParsedDate(2026, 8, 2));
+      expect(parseDate('ngày kia', today: today), const ParsedDate(2026, 8, 3));
+    });
+
+    test('reads the h hour marker and the meridiem words', () {
+      expect(parseTime('8h'), const ParsedTime(8, 0));
+      expect(parseTime('8h30'), const ParsedTime(8, 30));
+      expect(parseTime('8h tối'), const ParsedTime(20, 0));
+      expect(parseTime('2 giờ chiều'), const ParsedTime(14, 0));
+      expect(parseTime('11 sáng'), const ParsedTime(11, 0));
+    });
+
+    test('does not read an English "48 hours" as a time', () {
+      expect(parseTime('done in 48 hours', allowBareDigits: false), isNull);
+    });
+  });
+
   group('the other two languages', () {
     test('reads Bahasa Melayu labels', () {
       const message = '''

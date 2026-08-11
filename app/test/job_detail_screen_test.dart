@@ -13,6 +13,7 @@ import 'package:anacoo_tailor/services/cloth_photo_store.dart';
 import 'package:anacoo_tailor/services/notification_scheduler.dart';
 import 'package:anacoo_tailor/services/notification_service.dart';
 import 'package:anacoo_tailor/ui/job/job_detail_screen.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -94,7 +95,12 @@ void main() {
     }
   }
 
-  Future<void> pumpDetail(WidgetTester tester, int jobId) async {
+  Future<void> pumpDetail(
+    WidgetTester tester,
+    int jobId, {
+    String language = 'en',
+  }) async {
+    await db.saveSettings(AppSettingsCompanion(languageCode: Value(language)));
     // A phone-shaped viewport: this page is only ever read on one.
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -107,7 +113,7 @@ void main() {
         ],
         child: MaterialApp(
           theme: AnacooTheme.light(),
-          locale: const Locale('en'),
+          locale: Locale(language),
           supportedLocales: AppStrings.supportedLocales,
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
@@ -246,6 +252,25 @@ void main() {
     expect(find.text('Cancel'), findsOneWidget);
     expect(find.text('Booked'), findsNothing);
     expect(find.text('Next · Sewing'), findsNothing);
+    await unmount(tester);
+  });
+
+  testWidgets('renders in Vietnamese, dates included', (tester) async {
+    final jobId = await seedJob();
+    await pumpDetail(tester, jobId, language: 'vi');
+
+    for (final label in ['Đã đặt', 'Đang may', 'Sẵn sàng', 'Hoàn tất']) {
+      expect(find.text(label), findsWidgets, reason: 'missing step $label');
+    }
+    expect(find.text('Tiếp · Đang may'), findsOneWidget);
+    expect(find.text('Cắt lai quần / quần jean'), findsOneWidget);
+
+    // `intl` has Vietnamese date symbols, so the steps are dated in Vietnamese
+    // rather than falling back to English month names.
+    const formats = Formats('vi');
+    expect(formats.dayMonth(shopDateTime(2026, 8, 13)),
+        isNot(const Formats('en').dayMonth(shopDateTime(2026, 8, 13))));
+    expect(find.text(formats.dayMonth(shopDateTime(2026, 8, 13))), findsOneWidget);
     await unmount(tester);
   });
 }

@@ -33,7 +33,11 @@ closed days, and reminds ahead of each appointment.
 
 Flutter (Dart 3, Material 3, light + dark), Riverpod, Drift over SQLite,
 `flutter_local_notifications` with `timezone`. Targets Android 8+ and iOS 15+.
-UI in English, 中文 and Bahasa Melayu — the same three as the website.
+UI in English, 中文, Bahasa Melayu and Tiếng Việt.
+
+Vietnamese is app-only: the website offers the first three, so a pasted request
+never arrives in Vietnamese, but the parser reads Vietnamese labels, `tháng`
+dates and `8h tối` times for a request typed by hand.
 
 ## Layout
 
@@ -44,7 +48,7 @@ lib/
   services/      Notifications, clipboard/share intake, backup, wa.me links
   providers/     Riverpod wiring
   ui/            Today, Calendar, Job editor/detail, Customers, Settings
-  l10n/          UI copy in the three languages
+  l10n/          UI copy in the four languages
 ```
 
 Everything in `domain/` is free of Flutter and Drift imports, which is why the
@@ -62,13 +66,18 @@ flutter run
 
 ```sh
 flutter analyze
-flutter test                     # 103 tests, no device needed
+flutter test                     # 132 tests, no device needed
 ```
 
 `test/parser_test.dart` covers the six cases the spec calls out (the exact
 sample message, the same message stripped of `*`, the three time formats,
 day-first `6/8/2026`, multi-line notes with emoji, and garbage returning null)
-plus the Malay and Chinese label sets.
+plus the Malay, Chinese and Vietnamese label sets.
+
+`test/localisation_test.dart` walks `AppStrings.supportedLocales` over every
+label table. The tables are plain maps, so a language missing from one of them
+falls back to English silently rather than failing to compile — this is what
+catches that.
 
 `test/notification_scheduler_test.dart` proves the zero-orphan guarantee:
 schedule → reschedule → cancel leaves nothing pending, and the OS's pending set
