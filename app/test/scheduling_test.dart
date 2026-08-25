@@ -59,6 +59,106 @@ void main() {
     });
   });
 
+  group('12-hour booking buffer', () {
+    final now = shopDateTime(2026, 8, 25, 10, 0);
+
+    test('the earliest bookable moment is exactly 12 hours out', () {
+      // 10am today, so the earliest anything can be booked for is 10pm today.
+      expect(earliestBookable(now), shopDateTime(2026, 8, 25, 22, 0));
+    });
+
+    test('the floor stands, even at closing time', () {
+      // 8am gives 8pm and 10am gives 10pm — the second is the very minute the
+      // shop shuts, and it still stands rather than rolling to tomorrow. The
+      // buffer is the promise; opening hours are only ever a warning.
+      final early = shopDateTime(2026, 8, 25, 8, 0);
+      expect(
+        snapIntoBookableHours(early, hours, now: early),
+        shopDateTime(2026, 8, 25, 20, 0),
+      );
+      expect(
+        snapIntoBookableHours(now, hours, now: now),
+        shopDateTime(2026, 8, 25, 22, 0),
+      );
+    });
+
+    test('nudges a floor that lands before opening up to opening time', () {
+      // 8pm plus 12 hours is 8am, three hours before the shutters go up.
+      final evening = shopDateTime(2026, 8, 25, 20, 0);
+      expect(
+        snapIntoBookableHours(evening, hours, now: evening),
+        shopDateTime(2026, 8, 26, 11, 0),
+      );
+    });
+
+    test('skips a day the shop never opens', () {
+      final closedSundays = hours.withDay(DateTime.sunday, null);
+      // 2026-08-08 is a Saturday, so the floor lands on the shut Sunday.
+      final saturday = shopDateTime(2026, 8, 8, 20, 0);
+      expect(
+        snapIntoBookableHours(saturday, closedSundays, now: saturday),
+        shopDateTime(2026, 8, 10, 11, 0),
+      );
+    });
+
+    test('leaves a time already clear of the buffer alone', () {
+      expect(
+        snapIntoBookableHours(shopDateTime(2026, 9, 1, 14, 30), hours, now: now),
+        shopDateTime(2026, 9, 1, 14, 30),
+      );
+    });
+
+    test('never rounds back down into the buffer', () {
+      // Floor lands at 2:05pm; rounding to the *nearest* boundary would give
+      // 2:00pm, back inside the buffer, so slots always round up.
+      final oddNow = shopDateTime(2026, 8, 25, 2, 5);
+      expect(
+        snapIntoBookableHours(oddNow, hours, now: oddNow),
+        shopDateTime(2026, 8, 25, 14, 30),
+      );
+    });
+
+    test('warns about a time inside the buffer', () {
+      final warnings = evaluateSchedule(
+        at: shopDateTime(2026, 8, 25, 18, 0),
+        durationMinutes: 15,
+        hours: hours,
+        blockedDays: const {},
+        now: now,
+      );
+      expect(
+        warnings.map((w) => w.kind),
+        equals([ScheduleWarningKind.insideLeadTime]),
+      );
+    });
+
+    test('says nothing about a time exactly 12 hours out', () {
+      final warnings = evaluateSchedule(
+        at: shopDateTime(2026, 8, 25, 22, 0),
+        durationMinutes: 15,
+        hours: hours,
+        blockedDays: const {},
+        now: now,
+      );
+      expect(
+        warnings.map((w) => w.kind),
+        isNot(contains(ScheduleWarningKind.insideLeadTime)),
+      );
+    });
+
+    test('a past time is only ever called out as past', () {
+      final warnings = evaluateSchedule(
+        at: shopDateTime(2026, 8, 25, 9, 0),
+        durationMinutes: 15,
+        hours: hours,
+        blockedDays: const {},
+        now: now,
+      ).map((w) => w.kind);
+      expect(warnings, contains(ScheduleWarningKind.inThePast));
+      expect(warnings, isNot(contains(ScheduleWarningKind.insideLeadTime)));
+    });
+  });
+
   group('collection suggestion', () {
     test('is the drop-off plus the turnaround, inside working hours', () {
       final dropOff = shopDateTime(2026, 8, 6, 12, 0);

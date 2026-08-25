@@ -133,12 +133,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final slot = ref.read(slotMinutesProvider);
     final now = shopNow();
     // Keep the time of day sensible: today keeps "now", other days open at the
-    // first slot the shop is actually open for.
+    // first slot the shop is actually open for. A day inside the 12-hour
+    // booking buffer is pulled forward to the first day that clears it.
     final seed = isSameDay(_selectedDay, now)
         ? now
         : _selectedDay.add(const Duration(hours: 12));
     final dropOff = AppointmentDraft(
-      at: snapIntoWorkingHours(seed, hours, slotMinutes: slot),
+      at: snapIntoBookableHours(seed, hours, slotMinutes: slot),
     );
     Navigator.of(context).push(
       MaterialPageRoute<void>(

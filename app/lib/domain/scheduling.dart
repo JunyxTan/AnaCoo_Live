@@ -13,6 +13,7 @@ enum ScheduleWarningKind {
   blockedDate,
   clash,
   inThePast,
+  insideLeadTime,
 }
 
 class ScheduleWarning {
@@ -49,6 +50,21 @@ class BusySlot {
 
   DateTime get endUtc => startUtc.add(Duration(minutes: durationMinutes));
 }
+
+/// How much notice a new appointment needs. The pickers refuse to hand back an
+/// earlier time, and anything that still lands inside the buffer — an old job
+/// being edited, a pasted request asking for "in an hour" — raises
+/// [ScheduleWarningKind.insideLeadTime].
+const Duration bookingLeadTime = Duration(hours: 12);
+
+/// The earliest instant a new appointment may be booked for: [now] (or the
+/// shop clock) plus [bookingLeadTime].
+///
+/// Deliberately *not* pulled into working hours. The buffer is a promise about
+/// notice, and rounding it up to the next opening time would quietly make it
+/// longer than 12 hours; being shut is a separate, softer warning.
+tz.TZDateTime earliestBookable([tz.TZDateTime? now]) =>
+    (now ?? shopNow()).add(bookingLeadTime);
 
 /// Rounds [desired] to the nearest slot boundary and pulls it inside opening
 /// hours, rolling forward to the next open day when the shop is shut.
@@ -91,6 +107,48 @@ tz.TZDateTime snapIntoWorkingHours(
 int _roundToSlot(int minute, int slotMinutes) {
   final rounded = ((minute + slotMinutes ~/ 2) ~/ slotMinutes) * slotMinutes;
   return rounded.clamp(0, 24 * 60 - 1);
+}
+
+/// The first slot a new appointment can take — the seed time every "new job"
+/// button starts from, and where a too-soon pick is dragged to.
+///
+/// [desired] held above the [earliestBookable] floor, rounded *up* to a slot
+/// boundary so the rounding can never eat into the buffer, and nudged to
+/// opening time when it lands before the shop opens that day.
+///
+/// Unlike [snapIntoWorkingHours] this never rolls forward past closing time: a
+/// buffer that expires at 10pm means 10pm, not "10pm, or tomorrow morning,
+/// whichever the shop would prefer". Being outside opening hours stays a
+/// warning here as it is everywhere else. A closed *day* is the one exception
+/// — a seed on a day the shop never opens at all is no use to anybody.
+tz.TZDateTime snapIntoBookableHours(
+  tz.TZDateTime desired,
+  WorkingHours hours, {
+  int slotMinutes = 30,
+  tz.TZDateTime? now,
+}) {
+  final floor = earliestBookable(now);
+  final wanted = desired.isBefore(floor) ? floor : desired;
+
+  var day = startOfDay(wanted);
+  var minute = minuteOfDay(wanted);
+  for (var attempt = 0; attempt < 14 && !hours.isClosedAllWeek; attempt++) {
+    final dayHours = hours.forWeekday(day.weekday);
+    if (dayHours != null) {
+      // Opening time is a nudge *up* only, so it cannot undercut the buffer.
+      if (minute < dayHours.openMinutes) minute = dayHours.openMinutes;
+      break;
+    }
+    day = addDays(day, 1);
+    minute = 0;
+  }
+
+  return day.add(Duration(minutes: _roundUpToSlot(minute, slotMinutes)));
+}
+
+int _roundUpToSlot(int minute, int slotMinutes) {
+  if (slotMinutes <= 0) return minute;
+  return ((minute + slotMinutes - 1) ~/ slotMinutes) * slotMinutes;
 }
 
 /// Every slot start the shop is open for on [day].
@@ -200,6 +258,10 @@ List<ScheduleWarning> evaluateSchedule({
   final reference = now ?? shopNow();
   if (at.isBefore(reference)) {
     warnings.add(const ScheduleWarning(ScheduleWarningKind.inThePast));
+  } else if (at.isBefore(earliestBookable(reference))) {
+    // Only worth saying when the time is still ahead of us — "in the past"
+    // already covers the rest.
+    warnings.add(const ScheduleWarning(ScheduleWarningKind.insideLeadTime));
   }
 
   return warnings;

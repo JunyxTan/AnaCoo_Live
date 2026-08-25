@@ -147,7 +147,7 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
     final strings = ref.read(appStringsProvider);
     final hours = ref.read(workingHoursProvider);
     final slot = ref.read(slotMinutesProvider);
-    final fallback = snapIntoWorkingHours(shopNow(), hours, slotMinutes: slot);
+    final fallback = snapIntoBookableHours(shopNow(), hours, slotMinutes: slot);
 
     final parsed = candidate.parsed;
     final draft = parsed == null
@@ -209,7 +209,7 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
     final hours = ref.read(workingHoursProvider);
     final slot = ref.read(slotMinutesProvider);
     final dropOff = AppointmentDraft(
-      at: snapIntoWorkingHours(shopNow(), hours, slotMinutes: slot),
+      at: snapIntoBookableHours(shopNow(), hours, slotMinutes: slot),
     );
     Navigator.of(context).push(
       MaterialPageRoute<void>(
