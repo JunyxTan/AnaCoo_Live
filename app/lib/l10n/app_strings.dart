@@ -230,18 +230,18 @@ class AppStrings {
   String get warningInThePast =>
       _p('In the past', '已过时', 'Sudah berlalu', 'Đã qua');
   String get warningInsideLeadTime => _p(
-        'Not enough notice',
-        '通知太仓促',
-        'Notis tidak cukup',
-        'Chưa đủ thời gian báo trước',
+        'Under 12 hours notice',
+        '不足 12 小时通知',
+        'Kurang 12 jam notis',
+        'Dưới 12 giờ báo trước',
       );
 
   /// Shown when a picked time is dragged forward onto the lead-time floor.
   String earliestBookingIs(String when) => _p(
-        'Earliest booking is $when',
-        '最早可预约 $when',
-        'Tempahan paling awal $when',
-        'Sớm nhất có thể đặt là $when',
+        '12 hours notice needed — earliest is $when',
+        '需提前 12 小时预约 — 最早 $when',
+        'Perlu notis 12 jam — paling awal $when',
+        'Cần báo trước 12 giờ — sớm nhất là $when',
       );
   String get saveAnyway => _p('Save anyway', '仍然保存', 'Simpan juga', 'Vẫn lưu');
 

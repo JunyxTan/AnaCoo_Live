@@ -57,23 +57,14 @@ class BusySlot {
 /// [ScheduleWarningKind.insideLeadTime].
 const Duration bookingLeadTime = Duration(hours: 12);
 
-/// The earliest instant a new appointment may be booked for: [bookingLeadTime]
-/// after [now] (or the shop clock), and never on [now]'s own day.
+/// The earliest instant a new appointment may be booked for: [now] (or the
+/// shop clock) plus [bookingLeadTime].
 ///
-/// The day rule is the point of the buffer, not a rounding detail. Twelve
-/// hours from a 9am walk-in is 9pm, which would put the job in the last slot
-/// or two of the same evening — technically 12 hours' notice, but not the
-/// day-ahead breathing room the buffer exists to buy. Anything that clears
-/// both rules stands: a time is bookable from the next day onwards.
-///
-/// Deliberately *not* pulled into working hours — being shut is a separate,
-/// softer warning, and a closed day should not silently stretch the buffer.
-tz.TZDateTime earliestBookable([tz.TZDateTime? now]) {
-  final reference = now ?? shopNow();
-  final afterLeadTime = reference.add(bookingLeadTime);
-  final tomorrow = startOfDay(addDays(reference, 1));
-  return afterLeadTime.isBefore(tomorrow) ? tomorrow : afterLeadTime;
-}
+/// Deliberately *not* pulled into working hours. The buffer is a promise about
+/// notice, and rounding it up to the next opening time would quietly make it
+/// longer than 12 hours; being shut is a separate, softer warning.
+tz.TZDateTime earliestBookable([tz.TZDateTime? now]) =>
+    (now ?? shopNow()).add(bookingLeadTime);
 
 /// Rounds [desired] to the nearest slot boundary and pulls it inside opening
 /// hours, rolling forward to the next open day when the shop is shut.
@@ -118,7 +109,7 @@ int _roundToSlot(int minute, int slotMinutes) {
   return rounded.clamp(0, 24 * 60 - 1);
 }
 
-/// [snapIntoWorkingHours], with the [earliestBookable] floor applied first —
+/// [snapIntoWorkingHours], with the [bookingLeadTime] floor applied first —
 /// the seed time every "new job" button starts from.
 tz.TZDateTime snapIntoBookableHours(
   tz.TZDateTime desired,

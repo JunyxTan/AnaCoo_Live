@@ -62,30 +62,14 @@ void main() {
   group('12-hour booking buffer', () {
     final now = shopDateTime(2026, 8, 25, 10, 0);
 
-    test('rolls to the next day when 12 hours still lands on today', () {
-      // 10am plus 12 hours is 10pm the same evening; the buffer is there to
-      // buy a day's notice, so the floor becomes tomorrow instead.
-      expect(earliestBookable(now), shopDateTime(2026, 8, 26, 0, 0));
-    });
-
-    test('an early start does not open up tonight\'s last slots', () {
-      // 8am plus 12 hours is 8pm, which the shop could technically still take.
-      final early = shopDateTime(2026, 8, 25, 8, 0);
-      expect(earliestBookable(early), shopDateTime(2026, 8, 26, 0, 0));
-      expect(
-        snapIntoBookableHours(early, hours, now: early),
-        shopDateTime(2026, 8, 26, 11, 0),
-      );
-    });
-
-    test('keeps the full 12 hours when they reach past midnight', () {
-      // 8pm plus 12 hours is 8am tomorrow — already a later day, so the lead
-      // time stands as it is rather than being rounded anywhere.
-      final evening = shopDateTime(2026, 8, 25, 20, 0);
-      expect(earliestBookable(evening), shopDateTime(2026, 8, 26, 8, 0));
+    test('the earliest bookable moment is exactly 12 hours out', () {
+      // 10am today, so the earliest anything can be booked for is 10pm today.
+      expect(earliestBookable(now), shopDateTime(2026, 8, 25, 22, 0));
     });
 
     test('pushes a same-day request past the buffer and into opening hours', () {
+      // 10pm is the floor, but the last slot the shop can start is 9:30pm, so
+      // the first slot that clears the buffer is tomorrow's opening time.
       expect(
         snapIntoBookableHours(now, hours, now: now),
         shopDateTime(2026, 8, 26, 11, 0),
@@ -100,23 +84,18 @@ void main() {
     });
 
     test('never rounds back down into the buffer', () {
-      // A shop that never shuts, so nothing but the rounding is in play: the
-      // floor lands at 1:05am, whose nearest slot boundary is 1:00am — inside
-      // the buffer — so the slot above it wins.
-      final allHours = WorkingHours({
-        for (var d = 1; d <= 7; d++)
-          d: const DayHours(openMinutes: 0, closeMinutes: 24 * 60),
-      });
-      final oddNow = shopDateTime(2026, 8, 25, 13, 5);
+      // Floor lands at 2:05pm; the nearest slot boundary is 2:00pm, which is
+      // inside the buffer, so the slot above it wins.
+      final oddNow = shopDateTime(2026, 8, 25, 2, 5);
       expect(
-        snapIntoBookableHours(oddNow, allHours, now: oddNow),
-        shopDateTime(2026, 8, 26, 1, 30),
+        snapIntoBookableHours(oddNow, hours, now: oddNow),
+        shopDateTime(2026, 8, 25, 14, 30),
       );
     });
 
     test('warns about a time inside the buffer', () {
       final warnings = evaluateSchedule(
-        at: shopDateTime(2026, 8, 25, 21, 0),
+        at: shopDateTime(2026, 8, 25, 18, 0),
         durationMinutes: 15,
         hours: hours,
         blockedDays: const {},
@@ -128,9 +107,9 @@ void main() {
       );
     });
 
-    test('says nothing about a time on the far side of the floor', () {
+    test('says nothing about a time exactly 12 hours out', () {
       final warnings = evaluateSchedule(
-        at: shopDateTime(2026, 8, 26, 11, 0),
+        at: shopDateTime(2026, 8, 25, 22, 0),
         durationMinutes: 15,
         hours: hours,
         blockedDays: const {},
