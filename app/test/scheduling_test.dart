@@ -59,6 +59,81 @@ void main() {
     });
   });
 
+  group('12-hour booking buffer', () {
+    final now = shopDateTime(2026, 8, 25, 10, 0);
+
+    test('the earliest bookable moment is exactly 12 hours out', () {
+      // 10am today, so the earliest anything can be booked for is 10pm today.
+      expect(earliestBookable(now), shopDateTime(2026, 8, 25, 22, 0));
+    });
+
+    test('pushes a same-day request past the buffer and into opening hours', () {
+      // 10pm is the floor, but the last slot the shop can start is 9:30pm, so
+      // the first slot that clears the buffer is tomorrow's opening time.
+      expect(
+        snapIntoBookableHours(now, hours, now: now),
+        shopDateTime(2026, 8, 26, 11, 0),
+      );
+    });
+
+    test('leaves a time already clear of the buffer alone', () {
+      expect(
+        snapIntoBookableHours(shopDateTime(2026, 9, 1, 14, 30), hours, now: now),
+        shopDateTime(2026, 9, 1, 14, 30),
+      );
+    });
+
+    test('never rounds back down into the buffer', () {
+      // Floor lands at 2:05pm; the nearest slot boundary is 2:00pm, which is
+      // inside the buffer, so the slot above it wins.
+      final oddNow = shopDateTime(2026, 8, 25, 2, 5);
+      expect(
+        snapIntoBookableHours(oddNow, hours, now: oddNow),
+        shopDateTime(2026, 8, 25, 14, 30),
+      );
+    });
+
+    test('warns about a time inside the buffer', () {
+      final warnings = evaluateSchedule(
+        at: shopDateTime(2026, 8, 25, 18, 0),
+        durationMinutes: 15,
+        hours: hours,
+        blockedDays: const {},
+        now: now,
+      );
+      expect(
+        warnings.map((w) => w.kind),
+        equals([ScheduleWarningKind.insideLeadTime]),
+      );
+    });
+
+    test('says nothing about a time exactly 12 hours out', () {
+      final warnings = evaluateSchedule(
+        at: shopDateTime(2026, 8, 25, 22, 0),
+        durationMinutes: 15,
+        hours: hours,
+        blockedDays: const {},
+        now: now,
+      );
+      expect(
+        warnings.map((w) => w.kind),
+        isNot(contains(ScheduleWarningKind.insideLeadTime)),
+      );
+    });
+
+    test('a past time is only ever called out as past', () {
+      final warnings = evaluateSchedule(
+        at: shopDateTime(2026, 8, 25, 9, 0),
+        durationMinutes: 15,
+        hours: hours,
+        blockedDays: const {},
+        now: now,
+      ).map((w) => w.kind);
+      expect(warnings, contains(ScheduleWarningKind.inThePast));
+      expect(warnings, isNot(contains(ScheduleWarningKind.insideLeadTime)));
+    });
+  });
+
   group('collection suggestion', () {
     test('is the drop-off plus the turnaround, inside working hours', () {
       final dropOff = shopDateTime(2026, 8, 6, 12, 0);

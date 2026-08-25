@@ -331,7 +331,7 @@ class CustomerDetailScreen extends ConsumerWidget {
     final hours = ref.read(workingHoursProvider);
     final slot = ref.read(slotMinutesProvider);
     final dropOff = AppointmentDraft(
-      at: snapIntoWorkingHours(shopNow(), hours, slotMinutes: slot),
+      at: snapIntoBookableHours(shopNow(), hours, slotMinutes: slot),
     );
     Navigator.of(context).push(
       MaterialPageRoute<void>(

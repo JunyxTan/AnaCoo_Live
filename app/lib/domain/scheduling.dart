@@ -13,6 +13,7 @@ enum ScheduleWarningKind {
   blockedDate,
   clash,
   inThePast,
+  insideLeadTime,
 }
 
 class ScheduleWarning {
@@ -49,6 +50,21 @@ class BusySlot {
 
   DateTime get endUtc => startUtc.add(Duration(minutes: durationMinutes));
 }
+
+/// How much notice a new appointment needs. The pickers refuse to hand back an
+/// earlier time, and anything that still lands inside the buffer — an old job
+/// being edited, a pasted request asking for "in an hour" — raises
+/// [ScheduleWarningKind.insideLeadTime].
+const Duration bookingLeadTime = Duration(hours: 12);
+
+/// The earliest instant a new appointment may be booked for: [now] (or the
+/// shop clock) plus [bookingLeadTime].
+///
+/// Deliberately *not* pulled into working hours. The buffer is a promise about
+/// notice, and rounding it up to the next opening time would quietly make it
+/// longer than 12 hours; being shut is a separate, softer warning.
+tz.TZDateTime earliestBookable([tz.TZDateTime? now]) =>
+    (now ?? shopNow()).add(bookingLeadTime);
 
 /// Rounds [desired] to the nearest slot boundary and pulls it inside opening
 /// hours, rolling forward to the next open day when the shop is shut.
@@ -91,6 +107,28 @@ tz.TZDateTime snapIntoWorkingHours(
 int _roundToSlot(int minute, int slotMinutes) {
   final rounded = ((minute + slotMinutes ~/ 2) ~/ slotMinutes) * slotMinutes;
   return rounded.clamp(0, 24 * 60 - 1);
+}
+
+/// [snapIntoWorkingHours], with the [bookingLeadTime] floor applied first —
+/// the seed time every "new job" button starts from.
+tz.TZDateTime snapIntoBookableHours(
+  tz.TZDateTime desired,
+  WorkingHours hours, {
+  int slotMinutes = 30,
+  tz.TZDateTime? now,
+}) {
+  final floor = earliestBookable(now);
+  final start = desired.isBefore(floor) ? floor : desired;
+  final snapped = snapIntoWorkingHours(start, hours, slotMinutes: slotMinutes);
+  if (!snapped.isBefore(floor)) return snapped;
+  // Rounding to the *nearest* slot dropped us back inside the buffer, so take
+  // the slot above instead: a whole slot up minus at most half a slot of
+  // rounding always lands clear of the floor.
+  return snapIntoWorkingHours(
+    start.add(Duration(minutes: slotMinutes)),
+    hours,
+    slotMinutes: slotMinutes,
+  );
 }
 
 /// Every slot start the shop is open for on [day].
@@ -200,6 +238,10 @@ List<ScheduleWarning> evaluateSchedule({
   final reference = now ?? shopNow();
   if (at.isBefore(reference)) {
     warnings.add(const ScheduleWarning(ScheduleWarningKind.inThePast));
+  } else if (at.isBefore(earliestBookable(reference))) {
+    // Only worth saying when the time is still ahead of us — "in the past"
+    // already covers the rest.
+    warnings.add(const ScheduleWarning(ScheduleWarningKind.insideLeadTime));
   }
 
   return warnings;

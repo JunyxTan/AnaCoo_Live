@@ -146,7 +146,7 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
     final slot = ref.read(slotMinutesProvider);
     return JobDraft(
       dropOff: AppointmentDraft(
-        at: snapIntoWorkingHours(shopNow(), hours, slotMinutes: slot),
+        at: snapIntoBookableHours(shopNow(), hours, slotMinutes: slot),
       ),
     );
   }
@@ -566,7 +566,7 @@ class _AppointmentEditor extends ConsumerWidget {
             const SizedBox(width: 12),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () => _pickTime(context),
+                onPressed: () => _pickTime(context, ref),
                 icon: const Icon(Icons.schedule_outlined, size: 18),
                 label: Text(formats.time(draft.at)),
               ),
@@ -607,41 +607,75 @@ class _AppointmentEditor extends ConsumerWidget {
     );
   }
 
+  /// The first slot a new appointment can have: the 12-hour buffer, pushed on
+  /// to the next day the shop is actually open long enough to take it.
+  tz.TZDateTime _firstBookableSlot(WidgetRef ref) => snapIntoBookableHours(
+        shopNow(),
+        ref.read(workingHoursProvider),
+        slotMinutes: ref.read(slotMinutesProvider),
+      );
+
+  /// Where the pickers open. An appointment already sitting inside the buffer
+  /// — an old job being edited — opens on the first bookable slot instead of
+  /// its own time, so touching a picker at all moves it somewhere bookable.
+  tz.TZDateTime _openAt(WidgetRef ref) {
+    final first = _firstBookableSlot(ref);
+    return draft.at.isBefore(first) ? first : draft.at;
+  }
+
   Future<void> _pickDate(BuildContext context, WidgetRef ref) async {
+    final open = _openAt(ref);
     final picked = await showDatePicker(
       context: context,
-      initialDate: draft.at,
-      firstDate: shopDateTime(shopNow().year - 1, 1, 1),
+      initialDate: open,
+      // Days the 12-hour buffer swallows whole are never offered.
+      firstDate: startOfDay(_firstBookableSlot(ref)),
       lastDate: shopDateTime(shopNow().year + 3, 12, 31),
     );
-    if (picked == null) return;
-    onChanged(
-      draft.copy()
-        ..at = shopDateTime(
-          picked.year,
-          picked.month,
-          picked.day,
-          draft.at.hour,
-          draft.at.minute,
-        ),
+    if (picked == null || !context.mounted) return;
+    _apply(
+      context,
+      ref,
+      shopDateTime(picked.year, picked.month, picked.day, open.hour, open.minute),
     );
   }
 
-  Future<void> _pickTime(BuildContext context) async {
+  Future<void> _pickTime(BuildContext context, WidgetRef ref) async {
+    final open = _openAt(ref);
     final picked = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay(hour: draft.at.hour, minute: draft.at.minute),
+      initialTime: TimeOfDay(hour: open.hour, minute: open.minute),
     );
-    if (picked == null) return;
-    onChanged(
-      draft.copy()
-        ..at = shopDateTime(
-          draft.at.year,
-          draft.at.month,
-          draft.at.day,
-          picked.hour,
-          picked.minute,
-        ),
+    if (picked == null || !context.mounted) return;
+    _apply(
+      context,
+      ref,
+      shopDateTime(open.year, open.month, open.day, picked.hour, picked.minute),
+    );
+  }
+
+  /// Commits [wanted], pulling it up to the first bookable slot if it landed
+  /// inside the 12-hour buffer.
+  ///
+  /// The date picker can hide whole days, but the Material clock dial has no
+  /// way to grey out an hour — so on the buffer's own day the tailor can still
+  /// tap 9pm when the floor is 10pm. Moving the time and saying so beats
+  /// keeping one the shop cannot honour.
+  void _apply(BuildContext context, WidgetRef ref, tz.TZDateTime wanted) {
+    if (!wanted.isBefore(earliestBookable())) {
+      onChanged(draft.copy()..at = wanted);
+      return;
+    }
+
+    final earliest = _firstBookableSlot(ref);
+    onChanged(draft.copy()..at = earliest);
+
+    final strings = ref.read(appStringsProvider);
+    final formats = Formats(ref.read(languageCodeProvider));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(strings.earliestBookingIs(formats.dateAndTime(earliest))),
+      ),
     );
   }
 }

@@ -484,6 +484,7 @@ class ScheduleWarnings extends StatelessWidget {
             warning.clashType == AppointmentType.dropOff,
           ),
         ScheduleWarningKind.inThePast => strings.warningInThePast,
+        ScheduleWarningKind.insideLeadTime => strings.warningInsideLeadTime,
       };
 }
 
