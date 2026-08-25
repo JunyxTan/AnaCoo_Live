@@ -67,23 +67,37 @@ void main() {
       expect(earliestBookable(now), shopDateTime(2026, 8, 25, 22, 0));
     });
 
-    test('keeps a floor the shop can still take on the same evening', () {
-      // 8am plus 12 hours is 8pm, which is inside opening hours and a slot
-      // boundary, so it stands: tonight, not tomorrow.
+    test('the floor stands, even at closing time', () {
+      // 8am gives 8pm and 10am gives 10pm — the second is the very minute the
+      // shop shuts, and it still stands rather than rolling to tomorrow. The
+      // buffer is the promise; opening hours are only ever a warning.
       final early = shopDateTime(2026, 8, 25, 8, 0);
       expect(
         snapIntoBookableHours(early, hours, now: early),
         shopDateTime(2026, 8, 25, 20, 0),
       );
-    });
-
-    test('rolls to the next day rather than back to the last slot', () {
-      // 10pm is the floor, but the last slot the shop can start is 9:30pm.
-      // Pulling back to 9:30pm would undercut the buffer, so the first slot
-      // that clears it is tomorrow's opening time.
       expect(
         snapIntoBookableHours(now, hours, now: now),
+        shopDateTime(2026, 8, 25, 22, 0),
+      );
+    });
+
+    test('nudges a floor that lands before opening up to opening time', () {
+      // 8pm plus 12 hours is 8am, three hours before the shutters go up.
+      final evening = shopDateTime(2026, 8, 25, 20, 0);
+      expect(
+        snapIntoBookableHours(evening, hours, now: evening),
         shopDateTime(2026, 8, 26, 11, 0),
+      );
+    });
+
+    test('skips a day the shop never opens', () {
+      final closedSundays = hours.withDay(DateTime.sunday, null);
+      // 2026-08-08 is a Saturday, so the floor lands on the shut Sunday.
+      final saturday = shopDateTime(2026, 8, 8, 20, 0);
+      expect(
+        snapIntoBookableHours(saturday, closedSundays, now: saturday),
+        shopDateTime(2026, 8, 10, 11, 0),
       );
     });
 
@@ -95,8 +109,8 @@ void main() {
     });
 
     test('never rounds back down into the buffer', () {
-      // Floor lands at 2:05pm; the nearest slot boundary is 2:00pm, which is
-      // inside the buffer, so the slot above it wins.
+      // Floor lands at 2:05pm; rounding to the *nearest* boundary would give
+      // 2:00pm, back inside the buffer, so slots always round up.
       final oddNow = shopDateTime(2026, 8, 25, 2, 5);
       expect(
         snapIntoBookableHours(oddNow, hours, now: oddNow),

@@ -109,8 +109,18 @@ int _roundToSlot(int minute, int slotMinutes) {
   return rounded.clamp(0, 24 * 60 - 1);
 }
 
-/// [snapIntoWorkingHours], with the [bookingLeadTime] floor applied first —
-/// the seed time every "new job" button starts from.
+/// The first slot a new appointment can take — the seed time every "new job"
+/// button starts from, and where a too-soon pick is dragged to.
+///
+/// [desired] held above the [earliestBookable] floor, rounded *up* to a slot
+/// boundary so the rounding can never eat into the buffer, and nudged to
+/// opening time when it lands before the shop opens that day.
+///
+/// Unlike [snapIntoWorkingHours] this never rolls forward past closing time: a
+/// buffer that expires at 10pm means 10pm, not "10pm, or tomorrow morning,
+/// whichever the shop would prefer". Being outside opening hours stays a
+/// warning here as it is everywhere else. A closed *day* is the one exception
+/// — a seed on a day the shop never opens at all is no use to anybody.
 tz.TZDateTime snapIntoBookableHours(
   tz.TZDateTime desired,
   WorkingHours hours, {
@@ -118,17 +128,27 @@ tz.TZDateTime snapIntoBookableHours(
   tz.TZDateTime? now,
 }) {
   final floor = earliestBookable(now);
-  final start = desired.isBefore(floor) ? floor : desired;
-  final snapped = snapIntoWorkingHours(start, hours, slotMinutes: slotMinutes);
-  if (!snapped.isBefore(floor)) return snapped;
-  // Rounding to the *nearest* slot dropped us back inside the buffer, so take
-  // the slot above instead: a whole slot up minus at most half a slot of
-  // rounding always lands clear of the floor.
-  return snapIntoWorkingHours(
-    start.add(Duration(minutes: slotMinutes)),
-    hours,
-    slotMinutes: slotMinutes,
-  );
+  final wanted = desired.isBefore(floor) ? floor : desired;
+
+  var day = startOfDay(wanted);
+  var minute = minuteOfDay(wanted);
+  for (var attempt = 0; attempt < 14 && !hours.isClosedAllWeek; attempt++) {
+    final dayHours = hours.forWeekday(day.weekday);
+    if (dayHours != null) {
+      // Opening time is a nudge *up* only, so it cannot undercut the buffer.
+      if (minute < dayHours.openMinutes) minute = dayHours.openMinutes;
+      break;
+    }
+    day = addDays(day, 1);
+    minute = 0;
+  }
+
+  return day.add(Duration(minutes: _roundUpToSlot(minute, slotMinutes)));
+}
+
+int _roundUpToSlot(int minute, int slotMinutes) {
+  if (slotMinutes <= 0) return minute;
+  return ((minute + slotMinutes - 1) ~/ slotMinutes) * slotMinutes;
 }
 
 /// Every slot start the shop is open for on [day].
