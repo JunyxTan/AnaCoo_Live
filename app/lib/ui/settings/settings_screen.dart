@@ -540,7 +540,8 @@ class _BlockedDatesList extends ConsumerWidget {
     final picked = await showDatePicker(
       context: context,
       initialDate: now,
-      firstDate: shopDateTime(now.year - 1, 1, 1),
+      // A day that has already been and gone cannot usefully be blocked.
+      firstDate: startOfDay(now),
       lastDate: shopDateTime(now.year + 3, 12, 31),
     );
     if (picked == null || !context.mounted) return;

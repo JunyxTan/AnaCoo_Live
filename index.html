@@ -1525,9 +1525,64 @@ header,.float-nav{will-change:transform}
   });
   buildWA();
 
-  // set min date to today
+  // Past dates and times cannot be picked.
+  //
+  // "Now" is the shop's own clock in Johor Bahru, never the browser's:
+  // toISOString() would have called a Malaysian morning "yesterday", since
+  // UTC is still eight hours behind, and a customer booking from another
+  // country should see the shop's day either way.
+  var SHOP_TZ = "Asia/Kuala_Lumpur";
+  var shopClock = new Intl.DateTimeFormat("en-CA", {
+    timeZone: SHOP_TZ, year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+  });
+  function shopNow(){
+    var p = {};
+    shopClock.formatToParts(new Date()).forEach(function(part){
+      p[part.type] = part.value;
+    });
+    return {
+      day: p.year + "-" + p.month + "-" + p.day,
+      minute: (parseInt(p.hour, 10) % 24) * 60 + parseInt(p.minute, 10)
+    };
+  }
+
+  // "1:00 PM" -> 780. Returns null for the placeholder option.
+  function optionMinute(opt){
+    var m = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(opt.text.trim());
+    if(!m) return null;
+    var hour = parseInt(m[1], 10) % 12;
+    if(/pm/i.test(m[3])) hour += 12;
+    return hour * 60 + parseInt(m[2], 10);
+  }
+
   var dEl = document.getElementById("d");
-  dEl.min = new Date().toISOString().split("T")[0];
+  var tEl = document.getElementById("t");
+
+  function refreshAvailability(){
+    var now = shopNow();
+    dEl.min = now.day;
+    // A date typed straight into the field can still be in the past.
+    if(dEl.value && dEl.value < now.day) dEl.value = "";
+
+    var isToday = dEl.value === now.day;
+    var dropped = false;
+    Array.prototype.forEach.call(tEl.options, function(opt){
+      var minute = optionMinute(opt);
+      if(minute === null) return;
+      var past = isToday && minute <= now.minute;
+      opt.disabled = past;
+      opt.hidden = past;
+      if(past && opt.selected){ tEl.selectedIndex = 0; dropped = true; }
+    });
+    if(dropped) buildWA();
+  }
+
+  dEl.addEventListener("change", refreshAvailability);
+  dEl.addEventListener("input", refreshAvailability);
+  // Times fall away as the day goes on, so a page left open keeps up.
+  setInterval(refreshAvailability, 60000);
+  refreshAvailability();
 
   // Give each top-level section viewport-fit sizing and a scroll-margin so
   // in-page anchor links land clear of the sticky header. Scrolling itself is
