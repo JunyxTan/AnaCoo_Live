@@ -67,9 +67,20 @@ void main() {
       expect(earliestBookable(now), shopDateTime(2026, 8, 25, 22, 0));
     });
 
-    test('pushes a same-day request past the buffer and into opening hours', () {
-      // 10pm is the floor, but the last slot the shop can start is 9:30pm, so
-      // the first slot that clears the buffer is tomorrow's opening time.
+    test('keeps a floor the shop can still take on the same evening', () {
+      // 8am plus 12 hours is 8pm, which is inside opening hours and a slot
+      // boundary, so it stands: tonight, not tomorrow.
+      final early = shopDateTime(2026, 8, 25, 8, 0);
+      expect(
+        snapIntoBookableHours(early, hours, now: early),
+        shopDateTime(2026, 8, 25, 20, 0),
+      );
+    });
+
+    test('rolls to the next day rather than back to the last slot', () {
+      // 10pm is the floor, but the last slot the shop can start is 9:30pm.
+      // Pulling back to 9:30pm would undercut the buffer, so the first slot
+      // that clears it is tomorrow's opening time.
       expect(
         snapIntoBookableHours(now, hours, now: now),
         shopDateTime(2026, 8, 26, 11, 0),
