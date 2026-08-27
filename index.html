@@ -1128,6 +1128,7 @@ header,.float-nav{will-change:transform}
 <!-- date picker: drawn in-page so past days can be greyed out and refused -->
 <style>
 .form .datefield{cursor:pointer;caret-color:transparent}
+.form .hint{margin:-8px 0 20px;font-size:12.5px;line-height:1.5;color:var(--ink-faint)}
 /* Floats under the date field on a wide screen; sits inline under it on a phone. */
 .form .fr{position:relative}
 .cal{position:absolute;top:calc(100% + 6px);left:0;z-index:5;width:320px;min-width:0;max-width:calc(100vw - 44px);border:1px solid var(--line);background:var(--paper-2);padding:14px;box-shadow:0 20px 46px -24px rgba(0,0,0,.65)}
@@ -1151,7 +1152,7 @@ header,.float-nav{will-change:transform}
 .cal-day:focus-visible{outline:2px solid var(--oxblood,var(--gold));outline-offset:-2px}
 /* Days that have already gone: visibly out, and not clickable. */
 .cal-day:disabled{color:var(--ink-faint);opacity:.35;cursor:not-allowed}
-.cal-day.is-today:not(.is-selected){box-shadow:inset 0 0 0 1px var(--line)}
+.cal-day.is-today:not(:disabled):not(.is-selected){box-shadow:inset 0 0 0 1px var(--line)}
 .cal-day.is-selected,.cal-day.is-selected:hover{background:var(--oxblood,var(--gold));border-color:var(--oxblood,var(--gold));color:var(--paper);font-weight:600}
 .cal-blank{visibility:hidden}
 @media(max-width:600px){
@@ -1394,6 +1395,7 @@ header,.float-nav{will-change:transform}
           </select>
         </div>
       </div>
+      <p class="hint" data-en="Please book at least 12 hours ahead." data-zh="请至少提前 12 小时预约。" data-ms="Sila tempah sekurang-kurangnya 12 jam lebih awal.">Please book at least 12 hours ahead.</p>
       <div class="two">
         <div class="fr"><label class="fl" for="cn" data-en="Your name" data-zh="您的姓名" data-ms="Nama anda">Your name</label><input type="text" id="cn" autocomplete="name" data-en-ph="Full name" data-zh-ph="姓名" data-ms-ph="Nama penuh" placeholder="Full name"></div>
         <div class="fr"><label class="fl" for="cp" data-en="Phone / WhatsApp" data-zh="电话 / WhatsApp" data-ms="Telefon / WhatsApp">Phone / WhatsApp</label><input type="tel" id="cp" autocomplete="tel" inputmode="tel" data-en-ph="+60 12 345 6789" data-zh-ph="+60 12 345 6789" data-ms-ph="+60 12 345 6789" placeholder="+60 12 345 6789"></div>
@@ -1589,11 +1591,15 @@ header,.float-nav{will-change:transform}
     var p = {};
     shopClock.formatToParts(new Date()).forEach(function(part){ p[part.type] = part.value; });
     return {
-      y: +p.year, m: +p.month,
+      y: +p.year, m: +p.month, d: +p.day,
       day: p.year + "-" + p.month + "-" + p.day,
       minute: (+p.hour % 24) * 60 + (+p.minute)
     };
   }
+
+  // Every booking needs 12 hours' notice, so the floor is not "now" but
+  // "now plus twelve hours" — which regularly lands on tomorrow.
+  var LEAD_MINUTES = 12 * 60;
 
   var LOCALES = { en: "en-GB", zh: "zh-CN", ms: "ms-MY" };
   function locale(){ return LOCALES[lang] || "en-GB"; }
@@ -1612,6 +1618,32 @@ header,.float-nav{will-change:transform}
     var hour = parseInt(m[1], 10) % 12;
     if(/pm/i.test(m[3])) hour += 12;
     return hour * 60 + parseInt(m[2], 10);
+  }
+
+  function addDays(day, n){
+    var p = day.split("-");
+    var moved = new Date(+p[0], +p[1] - 1, +p[2] + n);
+    return iso(moved.getFullYear(), moved.getMonth() + 1, moved.getDate());
+  }
+
+  // The earliest moment that can be booked: {day, minute} in shop time.
+  function bookingFloor(){
+    var now = shopNow();
+    var total = now.minute + LEAD_MINUTES;
+    return { day: addDays(now.day, Math.floor(total / 1440)), minute: total % 1440 };
+  }
+
+  // The first day the floor still leaves a slot on. When the floor lands after
+  // the last slot of its own day — 10:25am plus twelve hours is 10:25pm, well
+  // past the 9pm slot — that whole day is unbookable and the answer is the
+  // next one.
+  function firstOpenDay(floor){
+    var last = -1;
+    Array.prototype.forEach.call(tEl.options, function(opt){
+      var m = optionMinute(opt);
+      if(m !== null && m > last) last = m;
+    });
+    return floor.minute <= last ? floor.day : addDays(floor.day, 1);
   }
 
   var dEl = document.getElementById("d");               // hidden, holds YYYY-MM-DD
@@ -1635,12 +1667,15 @@ header,.float-nav{will-change:transform}
 
   function drawMonth(){
     var now = shopNow();
-    if(!view) view = { y: now.y, m: now.m };
+    var open = firstOpenDay(bookingFloor());
+    var openParts = open.split("-");
+    var minY = +openParts[0], minM = +openParts[1];
+    if(!view) view = { y: minY, m: minM };
 
     calTitle.textContent = new Intl.DateTimeFormat(locale(), { month: "long", year: "numeric" })
       .format(new Date(view.y, view.m - 1, 1));
     // There is nothing to find behind this month, so the back arrow stops here.
-    calPrev.disabled = view.y < now.y || (view.y === now.y && view.m <= now.m);
+    calPrev.disabled = view.y < minY || (view.y === minY && view.m <= minM);
 
     var lead = (new Date(view.y, view.m - 1, 1).getDay() + 6) % 7;   // Monday-first
     var days = new Date(view.y, view.m, 0).getDate();
@@ -1651,8 +1686,9 @@ header,.float-nav{will-change:transform}
       var cls = "cal-day";
       if(day === now.day) cls += " is-today";
       if(day === dEl.value) cls += " is-selected";
+      // Gone, or swallowed whole by the 12-hour buffer.
       out += '<button type="button" class="' + cls + '" data-date="' + day + '"' +
-             (day < now.day ? " disabled" : "") + ">" + d + "</button>";
+             (day < open ? " disabled" : "") + ">" + d + "</button>";
     }
     calGrid.innerHTML = out;
   }
@@ -1681,19 +1717,21 @@ header,.float-nav{will-change:transform}
   }
 
   function refreshAvailability(){
-    var now = shopNow();
+    var floor = bookingFloor();
     var dropped = false;
-    // A chosen date can go stale while the page sits open overnight.
-    if(dEl.value && dEl.value < now.day){ dEl.value = ""; showDate(); dropped = true; }
+    // A chosen date can go stale while the page sits open.
+    if(dEl.value && dEl.value < firstOpenDay(floor)){ dEl.value = ""; showDate(); dropped = true; }
 
-    var isToday = dEl.value === now.day;
+    // Only the floor's own day is part-blocked; later days are wholly open,
+    // and anything earlier has already lost its date above.
+    var onFloorDay = dEl.value === floor.day;
     Array.prototype.forEach.call(tEl.options, function(opt){
       var minute = optionMinute(opt);
       if(minute === null) return;
-      var past = isToday && minute <= now.minute;
-      opt.disabled = past;
-      opt.hidden = past;
-      if(past && opt.selected){ tEl.selectedIndex = 0; dropped = true; }
+      var tooSoon = onFloorDay && minute < floor.minute;
+      opt.disabled = tooSoon;
+      opt.hidden = tooSoon;
+      if(tooSoon && opt.selected){ tEl.selectedIndex = 0; dropped = true; }
     });
 
     if(!cal.hidden) drawMonth();
