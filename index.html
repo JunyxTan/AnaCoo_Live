@@ -1152,16 +1152,53 @@ header,.float-nav{will-change:transform}
 .cal-day:focus-visible{outline:2px solid var(--oxblood,var(--gold));outline-offset:-2px}
 /* Days that have already gone: visibly out, and not clickable. */
 .cal-day:disabled{color:var(--ink-faint);opacity:.35;cursor:not-allowed}
+.cal-day.is-blackout{opacity:.42;text-decoration:line-through;text-decoration-thickness:1px}
 .cal-day.is-today:not(:disabled):not(.is-selected){box-shadow:inset 0 0 0 1px var(--line)}
 .cal-day.is-selected,.cal-day.is-selected:hover{background:var(--oxblood,var(--gold));border-color:var(--oxblood,var(--gold));color:var(--paper);font-weight:600}
 .cal-blank{visibility:hidden}
 @media(max-width:600px){
   .cal-day{height:42px;font-size:16px}
 }
+
+/* Vacation announcement: theme colours intentionally inherit from both of the
+   site's existing light/dark palettes. */
+.vacation-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:rgba(12,12,10,.64);backdrop-filter:blur(5px);overflow-y:auto}
+.vacation-backdrop[hidden]{display:none}
+.vacation-dialog{position:relative;width:min(560px,100%);max-height:calc(100dvh - 48px);overflow-y:auto;background:var(--paper);color:var(--ink);border:1px solid var(--gold-soft);padding:42px 44px;box-shadow:0 28px 80px rgba(0,0,0,.42)}
+.vacation-dialog::before{content:"";position:absolute;inset:7px;border:1px solid var(--line-soft);pointer-events:none}
+.vacation-close{position:absolute;z-index:1;top:14px;right:14px;width:42px;height:42px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);font:300 27px/1 var(--sans);cursor:pointer}
+.vacation-dialog h2{padding-right:30px;font-size:clamp(28px,6vw,38px);color:var(--ink)}
+.vacation-copy{position:relative;margin-top:22px;color:var(--ink-soft);font-size:15px;line-height:1.65}
+.vacation-copy p+p{margin-top:13px}
+.vacation-copy strong{color:var(--ink)}
+.vacation-actions{position:relative;display:flex;align-items:center;gap:18px;margin-top:26px}
+.vacation-dialog :focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.blackout-notice{margin:10px 0 0;padding:10px 12px;border-left:2px solid var(--gold);background:var(--paper-2);color:var(--ink-soft);font-size:12.5px;line-height:1.5}
+.booking-error{margin:10px 0 0;color:#a33;font-size:13px;line-height:1.45}
+@media(max-width:560px){
+  .vacation-backdrop{align-items:start;padding:12px}
+  .vacation-dialog{max-height:calc(100dvh - 24px);padding:34px 24px 28px}
+  .vacation-actions .btn{width:100%;white-space:normal;text-align:center}
+}
 </style>
 
 </head>
 <body>
+
+<div class="vacation-backdrop" id="vacationAnnouncement" hidden>
+  <section class="vacation-dialog" role="dialog" aria-modal="true" aria-labelledby="vacationTitle" aria-describedby="vacationCopy" tabindex="-1">
+    <button class="vacation-close" id="vacationClose" type="button" aria-label="Close announcement" data-en-aria="Close announcement" data-zh-aria="关闭公告" data-ms-aria="Tutup pengumuman">&times;</button>
+    <h2 id="vacationTitle" data-en="We’re taking a little break! 🌿" data-zh="我们要小休一下！🌿" data-ms="Kami berehat sebentar! 🌿">We’re taking a little break! 🌿</h2>
+    <div class="vacation-copy" id="vacationCopy">
+      <p data-en="Dear valued customers," data-zh="亲爱的顾客：" data-ms="Pelanggan yang dihargai,">Dear valued customers,</p>
+      <p data-en="We’ll be away from <strong>3–10 October 2026</strong> and will be back to welcome you on <strong>11 October 2026</strong>." data-zh="我们将于 <strong>2026年10月3日至10日</strong> 休假，并于 <strong>2026年10月11日</strong> 恢复营业，欢迎您的到来。" data-ms="Kami akan bercuti dari <strong>3–10 Oktober 2026</strong> dan kembali menyambut anda pada <strong>11 Oktober 2026</strong>.">We’ll be away from <strong>3–10 October 2026</strong> and will be back to welcome you on <strong>11 October 2026</strong>.</p>
+      <p data-en="Appointments during our holiday will be unavailable, but you’re welcome to book a date after we return." data-zh="休假期间暂停预约，欢迎您预约我们回来后的日期。" data-ms="Temu janji tidak tersedia sepanjang cuti kami, tetapi anda dialu-alukan untuk menempah tarikh selepas kami kembali.">Appointments during our holiday will be unavailable, but you’re welcome to book a date after we return.</p>
+      <p data-en="Thank you for your understanding and continued support. See you soon! ❤️" data-zh="感谢您的体谅与一直以来的支持。很快再见！❤️" data-ms="Terima kasih atas pemahaman dan sokongan berterusan anda. Jumpa lagi tidak lama lagi! ❤️">Thank you for your understanding and continued support. See you soon! ❤️</p>
+      <p data-en="With love,<br><strong>AnaCoo Tailor</strong>" data-zh="致以爱意，<br><strong>AnaCoo Tailor</strong>" data-ms="Dengan kasih sayang,<br><strong>AnaCoo Tailor</strong>">With love,<br><strong>AnaCoo Tailor</strong></p>
+    </div>
+    <div class="vacation-actions"><a class="btn btn-primary" id="vacationBook" href="#appointment" data-en="Book another date" data-zh="预约其他日期" data-ms="Tempah tarikh lain">Book another date</a></div>
+  </section>
+</div>
 
 <!-- ============ NAV ============ -->
 <header>
@@ -1387,6 +1424,7 @@ header,.float-nav{will-change:transform}
           <div class="cal-dow" id="calDow"></div>
           <div class="cal-grid" id="calGrid"></div>
         </div>
+        <p class="blackout-notice" id="blackoutNotice" data-en="Holiday closure: appointments are unavailable 3–10 October 2026. We reopen 11 October." data-zh="假期休息：2026年10月3日至10日暂停预约，10月11日恢复营业。" data-ms="Cuti: temu janji tidak tersedia 3–10 Oktober 2026. Kami buka semula 11 Oktober.">Holiday closure: appointments are unavailable 3–10 October 2026. We reopen 11 October.</p>
         </div>
         <div class="fr"><label class="fl" for="t" data-en="Select time" data-zh="选择时间" data-ms="Pilih masa">Select time</label>
           <select id="t">
@@ -1416,6 +1454,7 @@ header,.float-nav{will-change:transform}
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 18.15h-.01a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24a8.2 8.2 0 0 1 8.23 8.25c0 4.54-3.69 8.24-8.23 8.24Zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.25-.64.81-.79.98-.14.16-.29.18-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.23-1.48-1.38-1.73-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.43h-.48c-.16 0-.43.06-.65.31-.22.25-.86.84-.86 2.05s.88 2.38 1 2.54c.12.17 1.74 2.66 4.22 3.73.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.1-.22-.16-.47-.28Z"/></svg>
         <span data-en="Confirm via WhatsApp" data-zh="通过 WhatsApp 确认" data-ms="Sahkan melalui WhatsApp">Confirm via WhatsApp</span>
       </a>
+      <p class="booking-error" id="bookingError" role="alert" aria-live="assertive" hidden></p>
     </form>
   </div>
 </section>
@@ -1482,6 +1521,7 @@ header,.float-nav{will-change:transform}
   </div>
 </footer>
 
+<script src="assets/vacation-rules.js"></script>
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 (function(){
   // Always start new visits at the hero instead of restoring a previous
@@ -1503,6 +1543,10 @@ header,.float-nav{will-change:transform}
   });
 
   var WA = "60123608968";
+  var vacationRules = window.AnacooVacationRules;
+  var SHOP_TZ = vacationRules.SHOP_TIME_ZONE;
+  var nowProvider = function(){ return window.__ANACOO_NOW ? new Date(window.__ANACOO_NOW) : new Date(); };
+  var isVacationBlackout = vacationRules.isBlackoutDate;
   var lang = localStorage.getItem("anacoo-lang") || "en";
 
   function apply(l){
@@ -1515,6 +1559,10 @@ header,.float-nav{will-change:transform}
       var v = el.getAttribute("data-"+l+"-ph");
       if(v!==null) el.setAttribute("placeholder", v);
     });
+    document.querySelectorAll("[data-en-aria]").forEach(function(el){
+      var v = el.getAttribute("data-"+l+"-aria");
+      if(v!==null) el.setAttribute("aria-label", v);
+    });
     document.querySelectorAll(".lang button").forEach(function(b){
       b.classList.toggle("on", b.getAttribute("data-lang")===l);
     });
@@ -1525,6 +1573,44 @@ header,.float-nav{will-change:transform}
     b.addEventListener("click", function(){ apply(b.getAttribute("data-lang")); });
   });
   apply(lang);
+
+  // Show once per browser session until the shop reopens. If storage is
+  // unavailable (for example in strict privacy mode), the in-memory flag still
+  // prevents repeat interruptions within this page visit.
+  var vacationAnnouncement = document.getElementById("vacationAnnouncement");
+  var vacationClose = document.getElementById("vacationClose");
+  var vacationBook = document.getElementById("vacationBook");
+  var vacationDismissed = false;
+  var vacationPreviousFocus = null;
+  function wasVacationDismissed(){
+    if(vacationDismissed) return true;
+    try { return sessionStorage.getItem("anacoo-vacation-2026-dismissed") === "1"; }
+    catch(e) { return false; }
+  }
+  function dismissVacation(){
+    vacationDismissed = true;
+    try { sessionStorage.setItem("anacoo-vacation-2026-dismissed", "1"); } catch(e) {}
+    vacationAnnouncement.hidden = true;
+    if(vacationPreviousFocus && document.contains(vacationPreviousFocus)) vacationPreviousFocus.focus();
+  }
+  function showVacation(){
+    if(!vacationRules.shouldShowAnnouncement(nowProvider(), wasVacationDismissed())) return;
+    vacationPreviousFocus = document.activeElement;
+    vacationAnnouncement.hidden = false;
+    vacationClose.focus();
+  }
+  vacationClose.addEventListener("click", dismissVacation);
+  vacationBook.addEventListener("click", dismissVacation);
+  vacationAnnouncement.addEventListener("click", function(e){ if(e.target === vacationAnnouncement) dismissVacation(); });
+  vacationAnnouncement.addEventListener("keydown", function(e){
+    if(e.key === "Escape"){ e.preventDefault(); dismissVacation(); return; }
+    if(e.key !== "Tab") return;
+    var focusable = [vacationClose, vacationBook];
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  });
+  window.setTimeout(showVacation, 0);
 
   // mobile menu toggle (mobile only)
   var menuBtn = document.getElementById("menuBtn");
@@ -1543,6 +1629,12 @@ header,.float-nav{will-change:transform}
   var btn = document.getElementById("waBtn");
   function buildWA(){
     var d = document.getElementById("d").value;
+    if(isVacationBlackout(d)){
+      btn.href = "https://wa.me/" + WA;
+      btn.setAttribute("aria-disabled", "true");
+      return false;
+    }
+    btn.removeAttribute("aria-disabled");
     var t = document.getElementById("t").value;
     var s = document.getElementById("svc");
     var sv = s.options[s.selectedIndex] ? s.options[s.selectedIndex].text : "";
@@ -1563,6 +1655,7 @@ header,.float-nav{will-change:transform}
     lines.push("───────────────────");
     lines.push("Thank you! 🙏");
     btn.href = "https://wa.me/" + WA + "?text=" + encodeURIComponent(lines.join("\n"));
+    return true;
   }
   ["d","t","svc","n","cn","cp"].forEach(function(id){
     var e = document.getElementById(id);
@@ -1582,14 +1675,13 @@ header,.float-nav{will-change:transform}
   // iOS Safari ignores `min` in its own popover — it renders every past day in
   // full black and takes the tap. Owning the grid is the only way to grey those
   // days out and actually refuse them.
-  var SHOP_TZ = "Asia/Kuala_Lumpur";
   var shopClock = new Intl.DateTimeFormat("en-CA", {
     timeZone: SHOP_TZ, year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit", hourCycle: "h23"
   });
   function shopNow(){
     var p = {};
-    shopClock.formatToParts(new Date()).forEach(function(part){ p[part.type] = part.value; });
+    shopClock.formatToParts(nowProvider()).forEach(function(part){ p[part.type] = part.value; });
     return {
       y: +p.year, m: +p.month, d: +p.day,
       day: p.year + "-" + p.month + "-" + p.day,
@@ -1643,7 +1735,8 @@ header,.float-nav{will-change:transform}
       var m = optionMinute(opt);
       if(m !== null && m > last) last = m;
     });
-    return floor.minute <= last ? floor.day : addDays(floor.day, 1);
+    var day = floor.minute <= last ? floor.day : addDays(floor.day, 1);
+    return vacationRules.nextBookableDay(day);
   }
 
   var dEl = document.getElementById("d");               // hidden, holds YYYY-MM-DD
@@ -1687,8 +1780,12 @@ header,.float-nav{will-change:transform}
       if(day === now.day) cls += " is-today";
       if(day === dEl.value) cls += " is-selected";
       // Gone, or swallowed whole by the 12-hour buffer.
+      var blackout = isVacationBlackout(day);
+      if(blackout) cls += " is-blackout";
       out += '<button type="button" class="' + cls + '" data-date="' + day + '"' +
-             (day < open ? " disabled" : "") + ">" + d + "</button>";
+             (day < open || blackout ? " disabled" : "") +
+             (blackout ? ' aria-label="' + ({en:"Unavailable: holiday closure",zh:"不可预约：假期休息",ms:"Tidak tersedia: cuti"}[lang] || "Unavailable: holiday closure") + '" title="Holiday closure"' : "") +
+             ">" + d + "</button>";
     }
     calGrid.innerHTML = out;
   }
@@ -1720,7 +1817,7 @@ header,.float-nav{will-change:transform}
     var floor = bookingFloor();
     var dropped = false;
     // A chosen date can go stale while the page sits open.
-    if(dEl.value && dEl.value < firstOpenDay(floor)){ dEl.value = ""; showDate(); dropped = true; }
+    if(dEl.value && (dEl.value < firstOpenDay(floor) || isVacationBlackout(dEl.value))){ dEl.value = ""; showDate(); dropped = true; }
 
     // Only the floor's own day is part-blocked; later days are wholly open,
     // and anything earlier has already lost its date above.
@@ -1759,6 +1856,19 @@ header,.float-nav{will-change:transform}
     closeCal();
     dEl.dispatchEvent(new Event("change"));
     refreshAvailability();
+  });
+  btn.addEventListener("click", function(e){
+    var error = document.getElementById("bookingError");
+    if(!isVacationBlackout(dEl.value)){ error.hidden = true; return; }
+    e.preventDefault();
+    error.textContent = ({
+      en:"That date is unavailable during our holiday. Please choose 2 October or 11 October onwards.",
+      zh:"该日期正值假期，无法预约。请选择10月2日或10月11日之后的日期。",
+      ms:"Tarikh itu tidak tersedia semasa cuti kami. Sila pilih 2 Oktober atau 11 Oktober dan seterusnya."
+    })[lang] || "That date is unavailable during our holiday.";
+    error.hidden = false;
+    refreshAvailability();
+    dDisplay.focus();
   });
   document.addEventListener("click", function(e){
     if(!cal.hidden && e.target !== dDisplay && !cal.contains(e.target)) closeCal();
