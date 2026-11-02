@@ -13,27 +13,44 @@ test("every holiday date is blocked and adjacent dates remain eligible", () => {
   assert.equal(rules.isBlackoutDate(""), false);
 });
 
-test("next bookable day skips all or part of the blackout", () => {
+test("next bookable day skips all or part of the historic October blackout", () => {
   assert.equal(rules.nextBookableDay("2026-10-02"), "2026-10-02");
   assert.equal(rules.nextBookableDay("2026-10-03"), "2026-10-11");
   assert.equal(rules.nextBookableDay("2026-10-08"), "2026-10-11");
   assert.equal(rules.nextBookableDay("2026-10-11"), "2026-10-11");
 });
 
-test("announcement cutoff follows Kuala Lumpur time with an injectable date", () => {
-  assert.equal(rules.businessDay(new Date("2026-10-10T15:59:59Z")), "2026-10-10");
-  assert.equal(rules.businessDay(new Date("2026-10-10T16:00:00Z")), "2026-10-11");
-  assert.equal(rules.shouldShowAnnouncement(new Date("2026-10-10T15:59:59Z"), false), true);
-  assert.equal(rules.shouldShowAnnouncement(new Date("2026-10-10T16:00:00Z"), false), false);
-  assert.equal(rules.shouldShowAnnouncement(new Date("2026-10-01T00:00:00Z"), true), false);
+test("relocation announcement starts 1 November in Kuala Lumpur time and remains after the move", () => {
+  assert.equal(rules.businessDay(new Date("2026-10-31T15:59:59Z")), "2026-10-31");
+  assert.equal(rules.businessDay(new Date("2026-10-31T16:00:00Z")), "2026-11-01");
+  assert.equal(rules.shouldShowAnnouncement(new Date("2026-10-31T15:59:59Z"), false), false);
+  assert.equal(rules.shouldShowAnnouncement(new Date("2026-10-31T16:00:00Z"), false), true);
+  assert.equal(rules.shouldShowAnnouncement(new Date("2026-12-01T16:00:00Z"), false), true);
+  assert.equal(rules.shouldShowAnnouncement(new Date("2026-12-01T16:00:00Z"), true), false);
 });
 
-test("page wires the shared rule into calendar invalidation and final booking defense", () => {
+test("last Johor Bahru service date remains eligible, December dates do not", () => {
+  assert.equal(rules.LAST_JB_SERVICE_DAY, "2026-11-30");
+  assert.equal(rules.isUnavailableDate("2026-11-29"), false);
+  assert.equal(rules.isUnavailableDate("2026-11-30"), false);
+  assert.equal(rules.isUnavailableDate("2026-12-01"), true);
+  assert.equal(rules.isUnavailableDate("2027-01-01"), true);
+  assert.equal(rules.isUnavailableDate(""), false);
+  assert.equal(rules.isUnavailableDate("2026-10-05"), true);
+  assert.equal(rules.nextBookableDay("2026-11-30"), "2026-11-30");
+  assert.equal(rules.nextBookableDay("2026-12-01"), null);
+});
+
+test("page wires the relocation rule into calendar invalidation and final booking defense", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
-  assert.match(html, /day < open \|\| blackout \? " disabled"/);
-  assert.match(html, /dEl\.value < firstOpenDay\(floor\) \|\| isVacationBlackout\(dEl\.value\)/);
+  assert.match(html, /!open \|\| day < open \|\| blackout \? " disabled"/);
+  assert.match(html, /dEl\.value < firstOpenDay\(floor\) \|\| isUnavailableDate\(dEl\.value\)/);
   assert.match(html, /btn\.addEventListener\("click"[\s\S]*?e\.preventDefault\(\)/);
-  assert.match(html, /sessionStorage\.setItem\("anacoo-vacation-2026-dismissed"/);
+  assert.match(html, /sessionStorage\.setItem\("anacoo-relocation-2026-dismissed"/);
+  assert.match(html, /id="vacationTitle"[^>]*data-zh=[^>]*data-ms=/);
+  assert.match(html, /30 November 2026/);
+  assert.match(html, /2026年11月30日/);
+  assert.match(html, /isUnavailableDate\(d\)/);
   for(const language of ["en", "zh", "ms"]) {
     assert.match(html, new RegExp(`data-${language}="[^"]+"`));
   }
