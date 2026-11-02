@@ -48,8 +48,10 @@ test("page wires the relocation rule into calendar invalidation and final bookin
   assert.match(html, /btn\.addEventListener\("click"[\s\S]*?e\.preventDefault\(\)/);
   assert.match(html, /sessionStorage\.setItem\("anacoo-relocation-2026-dismissed"/);
   assert.match(html, /id="vacationTitle"[^>]*data-zh=[^>]*data-ms=/);
-  assert.match(html, /30 November 2026/);
-  assert.match(html, /2026年11月30日/);
+  assert.match(html, /end of November 2026/);
+  assert.doesNotMatch(html, /30 November 2026/);
+  assert.match(html, /2026年11月底/);
+  assert.doesNotMatch(html, /2026年11月30日/);
   assert.match(html, /isUnavailableDate\(d\)/);
   for(const language of ["en", "zh", "ms"]) {
     assert.match(html, new RegExp(`data-${language}="[^"]+"`));
