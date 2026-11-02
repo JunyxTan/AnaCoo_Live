@@ -1160,7 +1160,7 @@ header,.float-nav{will-change:transform}
   .cal-day{height:42px;font-size:16px}
 }
 
-/* Vacation announcement: theme colours intentionally inherit from both of the
+/* Relocation announcement: theme colours intentionally inherit from both of the
    site's existing light/dark palettes. */
 .vacation-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:rgba(12,12,10,.64);backdrop-filter:blur(5px);overflow-y:auto}
 .vacation-backdrop[hidden]{display:none}
@@ -1188,15 +1188,15 @@ header,.float-nav{will-change:transform}
 <div class="vacation-backdrop" id="vacationAnnouncement" hidden>
   <section class="vacation-dialog" role="dialog" aria-modal="true" aria-labelledby="vacationTitle" aria-describedby="vacationCopy" tabindex="-1">
     <button class="vacation-close" id="vacationClose" type="button" aria-label="Close announcement" data-en-aria="Close announcement" data-zh-aria="关闭公告" data-ms-aria="Tutup pengumuman">&times;</button>
-    <h2 id="vacationTitle" data-en="We’re taking a little break! 🌿" data-zh="我们要小休一下！🌿" data-ms="Kami berehat sebentar! 🌿">We’re taking a little break! 🌿</h2>
+    <h2 id="vacationTitle" data-en="Thank you for being part of our journey ❤️" data-zh="感谢一路有您 ❤️" data-ms="Terima kasih atas sokongan anda ❤️">Thank you for being part of our journey ❤️</h2>
     <div class="vacation-copy" id="vacationCopy">
-      <p data-en="Dear valued customers," data-zh="亲爱的顾客：" data-ms="Pelanggan yang dihargai,">Dear valued customers,</p>
-      <p data-en="We’ll be away from <strong>3–10 October 2026</strong> and will be back to welcome you on <strong>11 October 2026</strong>." data-zh="我们将于 <strong>2026年10月3日至10日</strong> 休假，并于 <strong>2026年10月11日</strong> 恢复营业，欢迎您的到来。" data-ms="Kami akan bercuti dari <strong>3–10 Oktober 2026</strong> dan kembali menyambut anda pada <strong>11 Oktober 2026</strong>.">We’ll be away from <strong>3–10 October 2026</strong> and will be back to welcome you on <strong>11 October 2026</strong>.</p>
-      <p data-en="Appointments during our holiday will be unavailable, but you’re welcome to book a date after we return." data-zh="休假期间暂停预约，欢迎您预约我们回来后的日期。" data-ms="Temu janji tidak tersedia sepanjang cuti kami, tetapi anda dialu-alukan untuk menempah tarikh selepas kami kembali.">Appointments during our holiday will be unavailable, but you’re welcome to book a date after we return.</p>
-      <p data-en="Thank you for your understanding and continued support. See you soon! ❤️" data-zh="感谢您的体谅与一直以来的支持。很快再见！❤️" data-ms="Terima kasih atas pemahaman dan sokongan berterusan anda. Jumpa lagi tidak lama lagi! ❤️">Thank you for your understanding and continued support. See you soon! ❤️</p>
-      <p data-en="With love,<br><strong>AnaCoo Tailor</strong>" data-zh="致以爱意，<br><strong>AnaCoo Tailor</strong>" data-ms="Dengan kasih sayang,<br><strong>AnaCoo Tailor</strong>">With love,<br><strong>AnaCoo Tailor</strong></p>
+      <p data-en="Dear valued customers," data-zh="亲爱的顾客：" data-ms="Para pelanggan yang dihargai,">Dear valued customers,</p>
+      <p data-en="After a wonderful time serving you in Johor Bahru, AnaCoo Tailor is moving to <strong>Singapore</strong>. Our last day of service at <strong>R&amp;F Princess Cove, Johor Bahru, is 30 November 2026</strong>." data-zh="感谢您一直以来在柔佛新山对 AnaCoo Tailor 的支持。我们即将迁往<strong>新加坡</strong>，并将于 <strong>2026年11月30日</strong> 结束在<strong>柔佛新山富力公主湾（R&amp;F Princess Cove）</strong>的服务。" data-ms="Selepas sekian lama berkhidmat di Johor Bahru, AnaCoo Tailor akan berpindah ke <strong>Singapura</strong>. Hari terakhir perkhidmatan kami di <strong>R&amp;F Princess Cove, Johor Bahru, ialah 30 November 2026</strong>.">After a wonderful time serving you in Johor Bahru, AnaCoo Tailor is moving to <strong>Singapore</strong>. Our last day of service at <strong>R&amp;F Princess Cove, Johor Bahru, is 30 November 2026</strong>.</p>
+      <p data-en="We are deeply grateful for every customer who has trusted and supported us over the years. Your kindness and encouragement have meant so much to us." data-zh="衷心感谢多年来每一位顾客的信任、支持与鼓励。能够为您服务，是我们的荣幸。" data-ms="Kami amat menghargai kepercayaan, sokongan dan kebaikan hati anda selama ini. Terima kasih kerana menjadi sebahagian daripada perjalanan kami.">We are deeply grateful for every customer who has trusted and supported us over the years. Your kindness and encouragement have meant so much to us.</p>
+      <p data-en="Although we are saying goodbye to our R&amp;F location, we hope this is not goodbye forever. We will share details about our next chapter in Singapore once they are confirmed." data-zh="虽然即将告别富力公主湾，但我们希望这不是永别。待新加坡的安排确定后，我们会再与大家分享。" data-ms="Walaupun kami akan meninggalkan lokasi di R&amp;F, kami berharap dapat bertemu lagi. Kami akan berkongsi maklumat mengenai langkah seterusnya di Singapura apabila semuanya disahkan.">Although we are saying goodbye to our R&amp;F location, we hope this is not goodbye forever. We will share details about our next chapter in Singapore once they are confirmed.</p>
+      <p data-en="With love and heartfelt thanks,<br><strong>AnaCoo Tailor</strong>" data-zh="怀着满满的感激与爱，<br><strong>AnaCoo Tailor</strong>" data-ms="Dengan penuh kasih dan penghargaan,<br><strong>AnaCoo Tailor</strong>">With love and heartfelt thanks,<br><strong>AnaCoo Tailor</strong></p>
     </div>
-    <div class="vacation-actions"><a class="btn btn-primary" id="vacationBook" href="#appointment" data-en="Book another date" data-zh="预约其他日期" data-ms="Tempah tarikh lain">Book another date</a></div>
+    <div class="vacation-actions"><a class="btn btn-primary" id="vacationBook" href="https://wa.me/60123608968" target="_blank" rel="noopener" data-en="Contact us on WhatsApp" data-zh="通过 WhatsApp 联系我们" data-ms="Hubungi kami melalui WhatsApp">Contact us on WhatsApp</a></div>
   </section>
 </div>
 
@@ -1424,7 +1424,7 @@ header,.float-nav{will-change:transform}
           <div class="cal-dow" id="calDow"></div>
           <div class="cal-grid" id="calGrid"></div>
         </div>
-        <p class="blackout-notice" id="blackoutNotice" data-en="Holiday closure: appointments are unavailable 3–10 October 2026. We reopen 11 October." data-zh="假期休息：2026年10月3日至10日暂停预约，10月11日恢复营业。" data-ms="Cuti: temu janji tidak tersedia 3–10 Oktober 2026. Kami buka semula 11 Oktober.">Holiday closure: appointments are unavailable 3–10 October 2026. We reopen 11 October.</p>
+        <p class="blackout-notice" id="blackoutNotice" data-en="R&amp;F Princess Cove appointments are available only until <strong>30 November 2026</strong>. We are relocating to Singapore. Thank you for your support." data-zh="富力公主湾的预约服务将于 <strong>2026年11月30日</strong> 结束。我们即将迁往新加坡，感谢您一直以来的支持。" data-ms="Temu janji di R&amp;F Princess Cove hanya tersedia sehingga <strong>30 November 2026</strong>. Kami akan berpindah ke Singapura. Terima kasih atas sokongan anda.">R&amp;F Princess Cove appointments are available only until <strong>30 November 2026</strong>. We are relocating to Singapore. Thank you for your support.</p>
         </div>
         <div class="fr"><label class="fl" for="t" data-en="Select time" data-zh="选择时间" data-ms="Pilih masa">Select time</label>
           <select id="t">
@@ -1546,7 +1546,7 @@ header,.float-nav{will-change:transform}
   var vacationRules = window.AnacooVacationRules;
   var SHOP_TZ = vacationRules.SHOP_TIME_ZONE;
   var nowProvider = function(){ return window.__ANACOO_NOW ? new Date(window.__ANACOO_NOW) : new Date(); };
-  var isVacationBlackout = vacationRules.isBlackoutDate;
+  var isUnavailableDate = vacationRules.isUnavailableDate;
   var lang = localStorage.getItem("anacoo-lang") || "en";
 
   function apply(l){
@@ -1574,7 +1574,7 @@ header,.float-nav{will-change:transform}
   });
   apply(lang);
 
-  // Show once per browser session until the shop reopens. If storage is
+  // Show once per browser session for the relocation notice. If storage is
   // unavailable (for example in strict privacy mode), the in-memory flag still
   // prevents repeat interruptions within this page visit.
   var vacationAnnouncement = document.getElementById("vacationAnnouncement");
@@ -1584,12 +1584,12 @@ header,.float-nav{will-change:transform}
   var vacationPreviousFocus = null;
   function wasVacationDismissed(){
     if(vacationDismissed) return true;
-    try { return sessionStorage.getItem("anacoo-vacation-2026-dismissed") === "1"; }
+    try { return sessionStorage.getItem("anacoo-relocation-2026-dismissed") === "1"; }
     catch(e) { return false; }
   }
   function dismissVacation(){
     vacationDismissed = true;
-    try { sessionStorage.setItem("anacoo-vacation-2026-dismissed", "1"); } catch(e) {}
+    try { sessionStorage.setItem("anacoo-relocation-2026-dismissed", "1"); } catch(e) {}
     vacationAnnouncement.hidden = true;
     if(vacationPreviousFocus && document.contains(vacationPreviousFocus)) vacationPreviousFocus.focus();
   }
@@ -1629,7 +1629,7 @@ header,.float-nav{will-change:transform}
   var btn = document.getElementById("waBtn");
   function buildWA(){
     var d = document.getElementById("d").value;
-    if(isVacationBlackout(d)){
+    if(isUnavailableDate(d) || vacationRules.businessDay(nowProvider()) > vacationRules.LAST_JB_SERVICE_DAY){
       btn.href = "https://wa.me/" + WA;
       btn.setAttribute("aria-disabled", "true");
       return false;
@@ -1761,14 +1761,15 @@ header,.float-nav{will-change:transform}
   function drawMonth(){
     var now = shopNow();
     var open = firstOpenDay(bookingFloor());
-    var openParts = open.split("-");
+    var openParts = (open || vacationRules.LAST_JB_SERVICE_DAY).split("-");
     var minY = +openParts[0], minM = +openParts[1];
-    if(!view) view = { y: minY, m: minM };
+    if(!view || !open) view = { y: minY, m: minM };
 
     calTitle.textContent = new Intl.DateTimeFormat(locale(), { month: "long", year: "numeric" })
       .format(new Date(view.y, view.m - 1, 1));
     // There is nothing to find behind this month, so the back arrow stops here.
-    calPrev.disabled = view.y < minY || (view.y === minY && view.m <= minM);
+    calPrev.disabled = !open || view.y < minY || (view.y === minY && view.m <= minM);
+    calNext.disabled = !open || view.y > 2026 || (view.y === 2026 && view.m >= 11);
 
     var lead = (new Date(view.y, view.m - 1, 1).getDay() + 6) % 7;   // Monday-first
     var days = new Date(view.y, view.m, 0).getDate();
@@ -1780,11 +1781,11 @@ header,.float-nav{will-change:transform}
       if(day === now.day) cls += " is-today";
       if(day === dEl.value) cls += " is-selected";
       // Gone, or swallowed whole by the 12-hour buffer.
-      var blackout = isVacationBlackout(day);
+      var blackout = isUnavailableDate(day);
       if(blackout) cls += " is-blackout";
       out += '<button type="button" class="' + cls + '" data-date="' + day + '"' +
-             (day < open || blackout ? " disabled" : "") +
-             (blackout ? ' aria-label="' + ({en:"Unavailable: holiday closure",zh:"不可预约：假期休息",ms:"Tidak tersedia: cuti"}[lang] || "Unavailable: holiday closure") + '" title="Holiday closure"' : "") +
+             (!open || day < open || blackout ? " disabled" : "") +
+             (blackout ? ' aria-label="' + ({en:"Appointments unavailable",zh:"该日期不可预约",ms:"Temu janji tidak tersedia"}[lang] || "Appointments unavailable") + '" title="Unavailable"' : "") +
              ">" + d + "</button>";
     }
     calGrid.innerHTML = out;
@@ -1817,7 +1818,7 @@ header,.float-nav{will-change:transform}
     var floor = bookingFloor();
     var dropped = false;
     // A chosen date can go stale while the page sits open.
-    if(dEl.value && (dEl.value < firstOpenDay(floor) || isVacationBlackout(dEl.value))){ dEl.value = ""; showDate(); dropped = true; }
+    if(dEl.value && (!firstOpenDay(floor) || dEl.value < firstOpenDay(floor) || isUnavailableDate(dEl.value))){ dEl.value = ""; showDate(); dropped = true; }
 
     // Only the floor's own day is part-blocked; later days are wholly open,
     // and anything earlier has already lost its date above.
@@ -1859,13 +1860,13 @@ header,.float-nav{will-change:transform}
   });
   btn.addEventListener("click", function(e){
     var error = document.getElementById("bookingError");
-    if(!isVacationBlackout(dEl.value)){ error.hidden = true; return; }
+    if(!isUnavailableDate(dEl.value) && firstOpenDay(bookingFloor())){ error.hidden = true; return; }
     e.preventDefault();
     error.textContent = ({
-      en:"That date is unavailable during our holiday. Please choose 2 October or 11 October onwards.",
-      zh:"该日期正值假期，无法预约。请选择10月2日或10月11日之后的日期。",
-      ms:"Tarikh itu tidak tersedia semasa cuti kami. Sila pilih 2 Oktober atau 11 Oktober dan seterusnya."
-    })[lang] || "That date is unavailable during our holiday.";
+      en:"Appointments at R&F Princess Cove end on 30 November 2026. Please contact us for enquiries about our move to Singapore.",
+      zh:"富力公主湾的预约服务将于2026年11月30日结束。如需了解迁往新加坡的事宜，请联系我们。",
+      ms:"Temu janji di R&F Princess Cove berakhir pada 30 November 2026. Sila hubungi kami untuk pertanyaan tentang perpindahan ke Singapura."
+    })[lang] || "Appointments at R&F Princess Cove end on 30 November 2026.";
     error.hidden = false;
     refreshAvailability();
     dDisplay.focus();
