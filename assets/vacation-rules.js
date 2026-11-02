@@ -9,9 +9,18 @@
   var BLACKOUT_START = "2026-10-03";
   var BLACKOUT_END = "2026-10-10";
   var REOPEN_DAY = "2026-10-11";
+  var LAST_JB_SERVICE_DAY = "2026-11-30";
+  var RELOCATION_ANNOUNCEMENT_START = "2026-11-01";
 
   function isBlackoutDate(day){
     return typeof day === "string" && day >= BLACKOUT_START && day <= BLACKOUT_END;
+  }
+
+  // Keep the historic October holiday blocked, and never offer an appointment
+  // at the Johor Bahru location after its final service day.
+  function isUnavailableDate(day){
+    return isBlackoutDate(day) ||
+      (typeof day === "string" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(day) && day > LAST_JB_SERVICE_DAY);
   }
 
   function addDays(day, amount){
@@ -21,8 +30,9 @@
   }
 
   function nextBookableDay(day){
+    if(isUnavailableDate(day) && day > LAST_JB_SERVICE_DAY) return null;
     while(isBlackoutDate(day)) day = addDays(day, 1);
-    return day;
+    return day <= LAST_JB_SERVICE_DAY ? day : null;
   }
 
   function businessDay(date){
@@ -34,7 +44,8 @@
   }
 
   function shouldShowAnnouncement(date, dismissed){
-    return !dismissed && businessDay(date) < REOPEN_DAY;
+    // Keep the relocation notice available after the JB location closes.
+    return !dismissed && businessDay(date) >= RELOCATION_ANNOUNCEMENT_START;
   }
 
   return Object.freeze({
@@ -42,6 +53,9 @@
     BLACKOUT_START:BLACKOUT_START,
     BLACKOUT_END:BLACKOUT_END,
     REOPEN_DAY:REOPEN_DAY,
+    LAST_JB_SERVICE_DAY:LAST_JB_SERVICE_DAY,
+    RELOCATION_ANNOUNCEMENT_START:RELOCATION_ANNOUNCEMENT_START,
+    isUnavailableDate:isUnavailableDate,
     isBlackoutDate:isBlackoutDate,
     addDays:addDays,
     nextBookableDay:nextBookableDay,
