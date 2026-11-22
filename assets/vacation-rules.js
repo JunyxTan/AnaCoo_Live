@@ -5,22 +5,19 @@
 })(typeof window !== "undefined" ? window : globalThis, function(){
   "use strict";
 
-  var SHOP_TIME_ZONE = "Asia/Kuala_Lumpur";
+  var SHOP_TIME_ZONE = "Asia/Singapore";
   var BLACKOUT_START = "2026-10-03";
   var BLACKOUT_END = "2026-10-10";
   var REOPEN_DAY = "2026-10-11";
-  var LAST_JB_SERVICE_DAY = "2026-11-30";
   var RELOCATION_ANNOUNCEMENT_START = "2026-11-01";
 
   function isBlackoutDate(day){
     return typeof day === "string" && day >= BLACKOUT_START && day <= BLACKOUT_END;
   }
 
-  // Keep the historic October holiday blocked, and never offer an appointment
-  // at the Johor Bahru location after its final service day.
+  // Only the historic October closure is blocked; Singapore requests remain open.
   function isUnavailableDate(day){
-    return isBlackoutDate(day) ||
-      (typeof day === "string" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(day) && day > LAST_JB_SERVICE_DAY);
+    return isBlackoutDate(day);
   }
 
   function addDays(day, amount){
@@ -30,9 +27,8 @@
   }
 
   function nextBookableDay(day){
-    if(isUnavailableDate(day) && day > LAST_JB_SERVICE_DAY) return null;
     while(isBlackoutDate(day)) day = addDays(day, 1);
-    return day <= LAST_JB_SERVICE_DAY ? day : null;
+    return day;
   }
 
   function businessDay(date){
@@ -53,7 +49,6 @@
     BLACKOUT_START:BLACKOUT_START,
     BLACKOUT_END:BLACKOUT_END,
     REOPEN_DAY:REOPEN_DAY,
-    LAST_JB_SERVICE_DAY:LAST_JB_SERVICE_DAY,
     RELOCATION_ANNOUNCEMENT_START:RELOCATION_ANNOUNCEMENT_START,
     isUnavailableDate:isUnavailableDate,
     isBlackoutDate:isBlackoutDate,
