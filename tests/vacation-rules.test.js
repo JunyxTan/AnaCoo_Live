@@ -38,7 +38,10 @@ test("website updates address, number, Google Maps, dates and Singapore-only pri
 
 test("published Singapore alteration price list shows clear SGD guide rates", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
-  const pricing = html.match(/<section id="pricing"[\\s\\S]*?<\\/section>/)?.[0];
+  const start = html.indexOf('<section id="pricing"');
+  assert.ok(start >= 0, "pricing section should exist");
+  const end = html.indexOf("</section>", start);
+  const pricing = html.slice(start, end);
   assert.ok(pricing, "pricing section should exist");
   const [standard, jeans] = pricing.split('<h3 data-en="Jeans Alterations"');
   assert.ok(jeans, "separate Jeans price card should exist");
