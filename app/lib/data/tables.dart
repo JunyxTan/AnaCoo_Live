@@ -30,7 +30,7 @@ class Jobs extends Table {
   TextColumn get itemDescription => text().nullable()();
   IntColumn get quantity => integer().withDefault(const Constant(1))();
 
-  /// SGD. Nullable — most jobs are quoted after the garment is seen.
+  /// MYR. Nullable — most jobs are quoted after the garment is seen.
   RealColumn get quotedPrice => real().nullable()();
   RealColumn get depositPaid => real().nullable()();
   TextColumn get status => textEnum<JobStatus>()();
