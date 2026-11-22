@@ -41,13 +41,13 @@ class Formats {
   }
 
   String money(double? amount) =>
-      amount == null ? '—' : 'RM ${amount.toStringAsFixed(2)}';
+      amount == null ? '—' : 'S$${amount.toStringAsFixed(2)}';
 
   /// Money without the trailing `.00`, for the narrow figures on the job page.
   String moneyShort(double? amount) {
     if (amount == null) return '—';
     final rounded = amount.roundToDouble();
-    return 'RM ${amount == rounded ? rounded.toStringAsFixed(0) : amount.toStringAsFixed(2)}';
+    return 'S$${amount == rounded ? rounded.toStringAsFixed(0) : amount.toStringAsFixed(2)}';
   }
 
   /// "Today", "Tomorrow", or the date.
