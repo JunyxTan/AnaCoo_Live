@@ -6,7 +6,7 @@ import 'package:timezone/timezone.dart' as tz;
 /// clock says. Appointments are stored as UTC instants and rendered through
 /// this location, so flying to another timezone (or a device clock change)
 /// never shifts an appointment on screen or in a scheduled reminder.
-const String shopTimeZoneName = 'Asia/Kuala_Lumpur';
+const String shopTimeZoneName = 'Asia/Singapore';
 
 bool _initialised = false;
 late tz.Location _shopLocation;
