@@ -1,8 +1,8 @@
 # AnaCoo Tailor — appointment book
 
-An offline-first internal app for AnaCoo Tailor (R&F Princess Cove Block A7-1,
-Johor Bahru). There is no customer-facing side: customers request appointments
-over WhatsApp on [anacoo.live](https://anacoo.live), and this app turns those
+An offline-first internal app for AnaCoo Tailor (Blk 536, Ang Mo Kio Avenue 10,
+Singapore 560536). The Johor Bahru location is closed. Customers request appointments
+over WhatsApp on [anacoo.com](https://anacoo.com), and this app turns those
 messages into scheduled work and reminds the tailor before each one.
 
 No backend, no login, no network required for anything the app does.
