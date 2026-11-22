@@ -151,10 +151,10 @@ void main() {
 
     expect(find.text('Pants / jeans shortening'), findsOneWidget);
     expect(find.text('Blue jeans'), findsOneWidget);
-    expect(find.text('RM 45'), findsOneWidget);
-    expect(find.text('RM 20'), findsOneWidget);
+    expect(find.text('S$45'), findsOneWidget);
+    expect(find.text('S$20'), findsOneWidget);
     // Price less deposit, spelled out so nobody has to do it at the counter.
-    expect(find.text('RM 25.00'), findsOneWidget);
+    expect(find.text('S$25.00'), findsOneWidget);
     await unmount(tester);
   });
 
