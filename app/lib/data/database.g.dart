@@ -840,7 +840,7 @@ class Job extends DataClass implements Insertable<Job> {
   final String? itemDescription;
   final int quantity;
 
-  /// SGD. Nullable — most jobs are quoted after the garment is seen.
+  /// MYR. Nullable — most jobs are quoted after the garment is seen.
   final double? quotedPrice;
   final double? depositPaid;
   final JobStatus status;
