@@ -35,3 +35,32 @@ test("website updates address, number, Google Maps, dates and Singapore-only pri
   assert.doesNotMatch(html,/60123608968|1\.4592273|1\.4590,103\.7679|LAST_JB_SERVICE_DAY/);
   assert.doesNotMatch(html,/>RM\d+/);
 });
+
+test("published Singapore alteration price list shows clear SGD guide rates", () => {
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  const start = html.indexOf('<section id="pricing"');
+  assert.ok(start >= 0, "pricing section should exist");
+  const end = html.indexOf("</section>", start);
+  const pricing = html.slice(start, end);
+  assert.ok(pricing, "pricing section should exist");
+  const [standard, jeans] = pricing.split('<h3 data-en="Jeans Alterations"');
+  assert.ok(jeans, "separate Jeans price card should exist");
+  const rowPrice = (section, label, price) => {
+    const i = section.indexOf('data-en="' + label + '"');
+    assert.ok(i >= 0, label + " should be listed");
+    const row = section.slice(i, section.indexOf("</div></div>", i));
+    assert.ok(row.includes('data-en="' + price + '"'), label + " should show " + price);
+  };
+  rowPrice(standard, "Shorten / Hemming", "S$8–S$10");
+  rowPrice(standard, "Shorten (2 layers)", "S$12–S$15");
+  rowPrice(standard, "Tapering (2 layers)", "S$12");
+  rowPrice(standard, "Let out waist", "S$15");
+  rowPrice(standard, "Replace zipper", "S$12–S$20");
+  rowPrice(jeans, "Shorten / Hemming", "S$13");
+  rowPrice(jeans, "Tapering", "S$8–S$10");
+  rowPrice(jeans, "Take in waist", "S$13");
+  rowPrice(jeans, "Let out waist", "S$20");
+  rowPrice(jeans, "Repair hole", "S$5–S$10");
+  assert.equal((pricing.match(/<div class="prow">/g) || []).length, 16);
+  assert.doesNotMatch(pricing, /Quotes in SGD \(Singapore Dollars\)/);
+});
